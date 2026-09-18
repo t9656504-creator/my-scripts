@@ -1,260 +1,5343 @@
--- Merged Client v2 (visual + Further Reach 30 + item base)
-local P=game:GetService("Players")local R=game:GetService("RunService")local L=game:GetService("Lighting")local S=game:GetService("StarterGui")local T=game:GetService("TeleportService")local RS=game:GetService("ReplicatedStorage")local RF=game:GetService("ReplicatedFirst")local UIS=game:GetService("UserInputService")local LP=P.LocalPlayer local Cam=workspace.CurrentCamera local Mouse=LP:GetMouse()if not LP.Character then LP.CharacterAdded:Wait()end
+--[[
+███████╗██╗   ██╗██╗██╗         █████╗ ██╗  ██╗███████╗
+██╔════╝██║   ██║██║██║        ██╔══██╗╚██╗██╔╝██╔════╝
+█████╗  ██║   ██║██║██║        ███████║ ╚███╔╝ █████╗
+██╔══╝  ╚██╗ ██╔╝██║██║        ██╔══██║ ██╔██╗ ██╔══╝
+███████╗ ╚████╔╝ ██║███████╗   ██║  ██║██╔╝ ██╗███████╗
+╚══════╝  ╚═══╝  ╚═╝╚══════╝   ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
 
--- === АНТИ-КИК ===
-pcall(function()
-    local oldKick = LP.Kick
-    LP.Kick = function() return nil end
-    T.Teleport = function() return nil end
-    for _,v in pairs(getgc(true)) do
-        if type(v) == "table" and rawget(v,"Kick") then v.Kick = function() end end
-    end
-end)
+        STUDIOS V2 OBFUSCATOR By MAX
+        https://eaxe.net
 
--- === АНТИ-ЛАГ ===
-pcall(function()
-    for _,o in pairs(workspace:GetDescendants()) do
-        if o:IsA("ParticleEmitter") or o:IsA("Trail") or o:IsA("Smoke")
-        or o:IsA("Fire") or o:IsA("Sparkles") or o:IsA("Beam")
-        or o:IsA("Explosion") or o:IsA("PointLight") or o:IsA("SpotLight") then
-            o.Enabled = false
-        end
-    end
-    L.GlobalShadows = false
-    L.FogEnd = 100000
-end)
+        Sponsored by
+        https://BloxDen.com
+--]]
 
--- === АНТИ-ВОИД ===
-workspace.FallenPartsDestroyHeight = 0/0
-local lastSafeCF = nil
-R.Heartbeat:Connect(function()
-    local c = LP.Character
-    local h = c and c:FindFirstChild("HumanoidRootPart")
-    if h then
-        if h.Position.Y > -100 then lastSafeCF = h.CFrame end
-        if h.Position.Y < -500 then
-            local sp = workspace:FindFirstChild("SpawnLocation") or workspace:FindFirstChild("Spawn")
-            h.CFrame = lastSafeCF or (sp and sp.CFrame + Vector3.new(0,5,0)) or CFrame.new(0,50,0)
-            h.Velocity = Vector3.zero
-        end
-    end
-end)
-
--- === FOV 120 ===
-if _G.F then _G.F:Disconnect() end
-_G.F = Cam:GetPropertyChangedSignal("FieldOfView"):Connect(function()
-    if Cam.FieldOfView ~= 120 then Cam.FieldOfView = 120 end
-end)
-Cam.FieldOfView = 120
-
--- === НЕБО ===
-for _,c in pairs(L:GetChildren()) do if c:IsA("Sky") then c:Destroy() end end
-local sk = Instance.new("Sky") sk.Parent = L
-sk.SkyboxBk="rbxassetid://600830446" sk.SkyboxDn="rbxassetid://600831635"
-sk.SkyboxFt="rbxassetid://600832720" sk.SkyboxLf="rbxassetid://600886090"
-sk.SkyboxRt="rbxassetid://600833862" sk.SkyboxUp="rbxassetid://600835177"
-sk.StarCount=0 sk.SunAngularSize=18
-L.TimeOfDay="17:30:00" L.ClockTime=17.5 L.Brightness=1.2 L.FogEnd=100000
-
--- === СКРЫТИЕ КУРСОРА ===
-pcall(function() S:SetCore("MouseIcon","") Mouse.Icon="" end)
-
--- === УДАЛЕНИЕ СТАРОГО ПРИЦЕЛА ===
-local pg = LP:WaitForChild("PlayerGui")
-for _,o in pairs(pg:GetDescendants()) do
-    if o:IsA("Frame") or o:IsA("ImageLabel") or o:IsA("ImageButton") or o:IsA("ScreenGui") then
-        local n = o.Name:lower()
-        if n:find("crosshair") or n:find("reticle") or n:find("aim") or n:find("sight")
-        or n:find("scope") or n:find("target") or n:find("cursor") or n:find("dot") or n:find("center") then
-            pcall(function()
-                o.Visible=false o.Active=false o.Enabled=false
-                if o:IsA("ScreenGui") then o:Destroy() end
-            end)
-        end
-    end
-end
-
--- === ПРИЦЕЛ ===
-local g = Instance.new("ScreenGui") g.Name="Aim" g.ResetOnSpawn=false g.Parent=pg
-local f = Instance.new("Frame") f.Size=UDim2.new(0,60,0,60) f.Position=UDim2.new(0.5,-30,0.5,-60) f.BackgroundTransparency=1 f.Parent=g
-local gl = Instance.new("Frame") gl.Size=UDim2.new(0.2,0,0.2,0) gl.Position=UDim2.new(0.4,0,0.4,0) gl.BackgroundColor3=Color3.new(1,1,1) gl.BackgroundTransparency=0.6 gl.BorderSizePixel=0
-local cg = Instance.new("UICorner") cg.CornerRadius=UDim.new(1,0) cg.Parent=gl gl.Parent=f
-local d = Instance.new("Frame") d.Size=UDim2.new(0.06,0,0.06,0) d.Position=UDim2.new(0.47,0,0.47,0) d.BackgroundColor3=Color3.new(1,1,1) d.BackgroundTransparency=0.1 d.BorderSizePixel=0
-local cd = Instance.new("UICorner") cd.CornerRadius=UDim.new(1,0) cd.Parent=d d.Parent=f
-local phase=0
-R.Heartbeat:Connect(function() phase=phase+1.5*R.Heartbeat:Wait() local s=0.06+0.012*math.sin(phase) d.Size=UDim2.new(s,0,s,0) d.Position=UDim2.new(0.5-s/2,0,0.5-s/2,0) end)
-local targeting=false
-R.RenderStepped:Connect(function()
-    if not f or not f.Parent then return end
-    local vp=Cam.ViewportSize local ct=Vector2.new(vp.X/2,vp.Y/2-30)
-    local ray=Cam:ScreenPointToRay(ct.X,ct.Y)
-    local params=RaycastParams.new()
-    if LP.Character then params.FilterDescendantsInstances={LP.Character} end
-    params.FilterType=Enum.RaycastFilterType.Blacklist params.IgnoreWater=true
-    local res=workspace:Raycast(ray.Origin,ray.Direction*30,params)
-    local hit=false
-    if res then
-        local ch=res.Instance:FindFirstAncestorOfClass("Model")
-        if ch then
-            local hum=ch:FindFirstChildOfClass("Humanoid")
-            if hum and hum.Health>0 then
-                local pl=P:GetPlayerFromCharacter(ch)
-                if pl and pl~=LP then hit=true end
-            end
-        end
-    end
-    if hit~=targeting then
-        targeting=hit
-        local col=hit and Color3.new(1,0,0) or Color3.new(1,1,1)
-        gl.BackgroundColor3=col gl.BackgroundTransparency=hit and 0.4 or 0.6
-        d.BackgroundColor3=col d.BackgroundTransparency=hit and 0 or 0.1
-    end
-end)
-
--- === АНТИ-ФЛАЙ ===
-local ce=RS:FindFirstChild("GameCorrectionEvents")
-if ce then
-    local ev=ce:FindFirstChild("GameCorrectionsNotify")
-    if ev then
-        ev.OnClientEvent:Connect(function(m)
-            if m=="Flying" then
-                local ch=LP.Character local hum=ch and ch:FindFirstChildOfClass("Humanoid")
-                if hum then ch:BreakJoints() hum.Health=0 end
-            end
-        end)
-    end
-end
-
--- === FPS СЧЁТЧИК ===
-local fgui=Instance.new("ScreenGui") fgui.Name="FPSmini" fgui.ResetOnSpawn=false fgui.Parent=pg
-local ffr=Instance.new("Frame") ffr.Size=UDim2.new(0,60,0,30) ffr.Position=UDim2.new(0.5,-30,0.02,0) ffr.BackgroundTransparency=1 ffr.Parent=fgui
-local lbl=Instance.new("TextLabel") lbl.Size=UDim2.new(1,0,1,0) lbl.BackgroundTransparency=1 lbl.Text="0" lbl.TextColor3=Color3.new(1,1,1) lbl.TextScaled=true lbl.Font=Enum.Font.GothamBold lbl.TextXAlignment=Enum.TextXAlignment.Center lbl.TextYAlignment=Enum.TextYAlignment.Center lbl.Parent=ffr
-local lt=tick() local fc=0 local fps=0
-R.RenderStepped:Connect(function()
-    fc=fc+1 local ct=tick()
-    if ct-lt>=0.5 then
-        fps=math.floor(fc/(ct-lt)) fc=0 lt=ct lbl.Text=tostring(fps)
-        if fps>=60 then lbl.TextColor3=Color3.new(0,1,0)
-        elseif fps>=30 then lbl.TextColor3=Color3.new(1,1,0)
-        else lbl.TextColor3=Color3.new(1,0,0) end
-    end
-end)
-
--- === ITEM BASE ===
-local function getItems()
-    local items = {}
-    for _,o in pairs(workspace:GetDescendants()) do
-        if o:IsA("Tool") then table.insert(items, o) end
-    end
-    return items
-end
-_G.XOCU_GetItems = getItems
-
--- === FURTHER REACH 30 ===
-local AkaliNotif = loadstring(game:HttpGet("https://raw.githubusercontent.com/ultraskidding/luau/refs/heads/main/AkaliNotif.lua"))()
-local Notify = AkaliNotif and AkaliNotif.Notify or function() end
-local Cfg = {Toggle=Enum.KeyCode.Seven, Unload=Enum.KeyCode.Eight, Retries=6, RetryDelay=0.15, TargetReach=30, Working=false}
-local Cool=false local DH local BH local reachConn
-
-local function ntf(t,dd) pcall(function() Notify({Title=t,Description=dd,Duration=4}) end) end
-local function waitI() local a=RS:WaitForChild("GamepassEvents",10) local b=RS:WaitForChild("MenuToys",10) return a,b end
-local function waitG() local c=LP.Character or LP.CharacterAdded:Wait() c:WaitForChild("Humanoid",5) local gr=c:WaitForChild("GrabbingScript",5) return c,gr end
-local function rg() local _,gr=waitG() if not gr then return end gr.Enabled=false task.wait() gr.Enabled=true end
-local function fa(ac) for i=1,Cfg.Retries do pcall(function() ac:FireServer() end) task.wait(Cfg.RetryDelay) end end
-
-local function forceReach()
-    local char = LP.Character
-    if not char then return end
-    local grab = char:FindFirstChild("GrabbingScript")
-    if not grab then return end
-    for _,name in ipairs({"Reach","MaxDistance","GrabDistance","Distance","Range"}) do
-        local v = grab:FindFirstChild(name)
-        if v and (v:IsA("NumberValue") or v:IsA("IntValue")) then
-            v.Value = Cfg.TargetReach
-        end
-    end
-end
-
-local function en()
-    local gpe,mt = waitI()
-    if not (gpe and mt) then ntf("Further Reach","Instances not found!") return false end
-    local sn = gpe:FindFirstChild("FurtherReachBoughtNotifier")
-    local ac = mt:FindFirstChild("LimitedTimeToyEvent")
-    if not (sn and ac) then ntf("Further Reach","Missing notify/activator!") return false end
-    local old = LP:FindFirstChild("FartherReach")
-    if old then old:Destroy() end
-    local mk = Instance.new("BoolValue") mk.Name="FartherReach" mk.Value=true mk.Parent=LP
-    sn.Parent = RF
-    ac.Name = "FurtherReachBoughtNotifier"
-    ac.Parent = gpe
-    rg()
-    task.spawn(fa, ac)
-    task.delay(0.5, forceReach)
-    if reachConn then reachConn:Disconnect() end
-    reachConn = R.Heartbeat:Connect(function()
-        if not Cfg.Working then return end
-        local ch = LP.Character
-        if not ch then return end
-        local gr = ch:FindFirstChild("GrabbingScript")
-        if not gr then return end
-        for _,name in ipairs({"Reach","MaxDistance","GrabDistance","Distance","Range"}) do
-            local v = gr:FindFirstChild(name)
-            if v and (v:IsA("NumberValue") or v:IsA("IntValue")) and v.Value < Cfg.TargetReach then
-                v.Value = Cfg.TargetReach
-            end
-        end
-    end)
-    if DH then DH:Disconnect() end
-    DH = LP.CharacterAdded:Connect(function(c)
-        c:WaitForChild("Humanoid",10) c:WaitForChild("GrabbingScript",10) task.wait(0.3)
-        if Cfg.Working then
-            rg()
-            local g2 = RS:FindFirstChild("GamepassEvents")
-            if g2 then
-                local a2 = g2:FindFirstChild("FurtherReachBoughtNotifier")
-                if a2 then task.spawn(fa,a2) end
-            end
-            task.delay(0.5, forceReach)
-        end
-    end)
-    Cfg.Working = true
-    return true
-end
-
-local function dis()
-    local old = LP:FindFirstChild("FartherReach")
-    if old then old:Destroy() end
-    local gpe = RS:FindFirstChild("GamepassEvents")
-    local mt = RS:FindFirstChild("MenuToys")
-    if gpe and mt then
-        local r = gpe:FindFirstChild("FurtherReachBoughtNotifier")
-        if r then r.Name="LimitedTimeToyEvent" r.Parent=mt end
-    end
-    rg()
-    if reachConn then reachConn:Disconnect() reachConn=nil end
-    if DH then DH:Disconnect() DH=nil end
-    Cfg.Working = false
-end
-
-local function tgl(sh)
-    if Cfg.Working then dis() if sh then ntf("Further Reach","Disabled!") end
-    else local ok=en() if sh then ntf("Further Reach", ok and "Activated! (30m)" or "Failed!") end end
-end
-
-task.spawn(function() task.wait(1) if not Cfg.Working then tgl(false) end end)
-
-BH = UIS.InputBegan:Connect(function(input,gp)
-    if gp then return end
-    if input.KeyCode == Cfg.Toggle then
-        if Cool then return end
-        Cool=true
-        tgl(true)
-        task.delay(0.3, function() Cool=false end)
-    elseif input.KeyCode == Cfg.Unload then
-        ntf("Further Reach","Unloading...")
-        if Cfg.Working then dis() end
-        if BH then BH:Disconnect() end
-    end
-end)
-
-print("✅ Merged v2 loaded (visual + anti-cheat + Further Reach 30)")
+return (function(...)
+	local P = {
+			")0bDBWTM",
+			")5QJ_$02b",
+			")=I;%",
+			")-P.9\'Wbh@JXLL#5X]?f_gJFd2<#2p\\L_n",
+			")[SlmZ3i>Q7bP67X]An%`Qk#Ypa`*",
+			")o7+pH%]\'j",
+			");%i>#t`;9k)NXs0tcD:D",
+			")@_HCX/\"YI-eZL2f",
+			")!S0.XuMgLVTq:",
+			")%gbXFW(%",
+			")Ro36C/Ps",
+			")\"Wm#t:3_",
+			")T)D1HAi8Qn].9f]a\"",
+			")[UNd<BI^GlsL",
+			")MN+(M_Y+PUBQ,QH=2*_U",
+			")u=Yo",
+			")i4ud&qA-",
+			")Tb15,*EabQj99pp",
+			")=AF7drQ>I6p/",
+			")kjQBEuZQ5[;9RqC\"%>",
+			")ilqO*Q^ZP[0TpF",
+			")1%%g\"WaB",
+			")%B8A8^0`-o$b(",
+			")0i.^.6\\Sb6\"tHSrV2",
+			")1^FSn#jR",
+			")=.RWhEWNZu>\":d5YD_uP??4>",
+			")>Q7W%*C",
+			")!Y!JoGsD)/u&&:",
+			")!^g]>",
+			")]W1D",
+			")d\\C+B_<bFB",
+			")M]:_!\'S`AA/<",
+			")m5oSHU>WarjL",
+			")/*SA",
+			").leenL05l",
+			")^kj;%(`kQ",
+			")KR`<5]DYgXBbfhNV1Im[3?m:(+Ss-T",
+			")-fZFF4*",
+			")*`#aD",
+			")GsQXWLkKp<ThB).",
+			")1$=i\'1q",
+			")?6\"#::6",
+			")lp\\!5",
+			")N=\"oeusD",
+			")PijfbRIJ8k",
+			")l-Uf/r(S]W[n;\\",
+			"))[9ZH?&g27[N!M(s9*48fmFF;@ek8p\\;@]Luj=%eBZ4u3*@:>8L(C\"aV0?rH-<[!=F@uHN-d+AXqq",
+			")Thk\'ZTQ0fUbgDT[WL",
+			")p*!;4p[p:eI1]GO",
+			")<\'(6#i5N",
+			")T7G[Z):T>?!_j+[-)9",
+			")l:L\\TWau7[T:k",
+			")dHd!<FuUa4",
+			")VQ^a;X-Pp]!j1!I<,",
+			")GrrMSI#O((eFSj[TF",
+			")!bP8FJj",
+			")1_h/bNj",
+			")-DAh9gs,L>!han&e2",
+			")0,H>cpGTKa4U,n",
+			")1$IIEG#",
+			")$(#cm:G(",
+			")cP8rA",
+			")XBY-B!C",
+			")m]I;Q",
+			")e!XIqET;[",
+			")YJiUPuY",
+			")M80k!Q9c<jN6s_\'\'^uZ",
+			")1h\"jX&gVBrHE+",
+			")m:Dt`++hlk_8!",
+			")!39=\"u[C",
+			").k#%ai8u`F",
+			")p52Wl;VY6VN`I2dNj",
+			")<5\'o3e59#3lpE2cN1i",
+			")\'s4Z",
+			")-d+7tp,Z@c9_L26Jt?u(_!",
+			")6Oa-gEm\\=VKF2Q.m0e",
+			")n\'Nbmgte$I",
+			")Q7Lf8\",",
+			")5hDdC*2K`rtgd=bJs5T^",
+			")rt3r",
+			")YJid#NG2nOTUMa",
+			")OL#mGl[oU?",
+			")dbV[m</",
+			")EMu1;[Ou",
+			")ngXPa8(RiFR8c.",
+			")M**Q:o-*:]",
+			")M@F(0#2#",
+			")Tm*$",
+			")oT*6lj0dsj-DJ]o;1%",
+			")aq^Jl*r",
+			")!+A^7p4hCa-LDu$j-E",
+			")LjT,fH,0AY;ZGpSeik",
+			");IBe@A5_\'L0t<$Y\\XGO=)%e2<\\+.",
+			")l2I`",
+			")F4USG1QID",
+			")MC8GJhGMNGE_RP=`@^5(",
+			")j%195C$dr)",
+			")/ZGI*T_!_9",
+			")N^+eD",
+			")tST_9!jeI8",
+			")GrI]EN=\"oeusD",
+			")*dNR:a\"",
+			")_s2g",
+			")nX4,-e*V8nN6[#e",
+			")WZ:piP#J",
+			")l:Y8plHEtE-_(2g2sM",
+			")\\p,+-2]h6.+W]C.V2]>DBGZ;/CoK:)28u",
+			");m)<\"Rt.",
+			")l:L\\;1*Hh[1**Bh2?X\\cWBmZB2HURh",
+			")]K\"H",
+			")b5r*c-R#btpZ3%6T!7",
+			")WTQbW\"/",
+			")I3n]F",
+			")[0&=\\G7KUb",
+			"):SPD",
+			")uot($u$,,NHq@4PGD",
+			")_@0qeP4t",
+			")o;%]!WX$\\8L;ZK)",
+			")pRY%5lH[D$GrI0$n-)",
+			")TJ-`_",
+			")o3al0f7h",
+			")l:L\\g2Xunm15g$",
+			")gg).n",
+			")Z<r*%-LE-XTcZMT&s8\\3WBnM$B<,",
+			")_7KQj$Z3",
+			")NV&LbWaUTDTeNK%",
+			")gB+>%o9",
+			")=D068`,fq)pY",
+			")MOsL=#\"",
+			")U:A\";EfX2F27Ni!ocb",
+			")gF(/$?#6h[\'i36!%a",
+			")@D",
+			");V_M5",
+			")kacpLEf5CG",
+			")pi?rPTI!C4TI_\\m1q",
+			")jnWqEl:L*",
+			")Ag/UFmAK/rU/",
+			")8M5QC\'Ki=-;n",
+			")p=Wb56P?",
+			")9+49)`k]6EbC`-2V<J",
+			")DjSHAY7<V,$\"V",
+			")T^biPm!O-BKg",
+			")hVF@",
+			")rir0+",
+			")K,7#f",
+			")E\"\\nT9/m7",
+			")F0_5",
+			")cf:=?&OZ",
+			")6cjk7G[TW=g_?%\"",
+			")NuH!6",
+			")YRAmk8WZ",
+			")*mH(I6te,(Aq",
+			")Th72",
+			")1NCqUnHlJapM/csNa",
+			")rn;_jA0.aE",
+			")EJP359#R+\'",
+			")K7)T!&HcXtEVam;<6",
+			")g\"`4Y\':Reer/P",
+			").Q^R3`Y8+q+F",
+			")8Yj%mJ*J.W",
+			")5+k,1\",",
+			")9g7F&",
+			")%8uF\"th",
+			")mee80+5U,iL6cs",
+			")*sbl^MEjF",
+			")fgU!1/nBjFA_u3L8p]:7g*#h=",
+			")4.]\\!*hD\'T;RU^CdZ:f.:,",
+			")N2I\'UTIRf#NZ9p\'",
+			")2tG=D",
+			")ahbjE6#)/u",
+			")a;;J`OnQ7Wm*",
+			")WtI$F",
+			")ZY1R@tt<V;Y<",
+			")V`",
+			")P@30\'pkO)\"UNqY",
+			")=E\'AN1npk^dPXsWW;QRc/K)X\"ZVX",
+			")5ou\"na\"",
+			")ii<Y5/jHlR^ZXC",
+			")d_E9>7<c/M]Q\'_d",
+			")NGWf0WL",
+			")K65ECE@*9",
+			")VPK\"tOh",
+			")Q`AL$-W9qu-^<E\\3SS*[",
+			")#gr1dgR0",
+			")T0(knd&.W=_!",
+			")jaDacTp#B\\",
+			")Th*Pcu$Mb,2)IZT",
+			")L;h!ift(8:W1>(J",
+			")T8E.+A5+6=Z,",
+			")Y3c",
+			")n(2e%e-WNgb*n6+;h",
+			")W^)^W15K?#IW4m7-De",
+			")N]\"F_T:,",
+			")ugicLsr:+X[?@\\6",
+			")IGF^lN\"^b>NVs9a",
+			")!/!\\/1P\\",
+			")-V9d-WnrHcI#?k:o^",
+			")5dR]_6c%Dq",
+			")I/=pFQr,cq8l:mniA6",
+			")#`qe?",
+			")IGGXI",
+			")>;nme<:(s)qc89",
+			")Rr;c&u-_F7mo",
+			")EELt",
+			")@`+>%^[9",
+			")^1Pjn",
+			")oI1oCYF:;0;h",
+			")O&p-M0i11HX]P\'",
+			")2tHJ@",
+			"))-/S]X4gnO",
+			")rPkR2qF3",
+			")RSF&$",
+			")%\\A:*F@m&U)8=X",
+			")&,7O`?`nkUK;F",
+			")%jlOk\'_g/]:k",
+			")-I",
+			")N%khN<$MQ(Le#q=",
+			")NG2!$",
+			")/CP1K",
+			")EdabIJE!V[",
+			")98BE#A<V79m&m",
+			")N\"A8Au@_*g-o(Q%",
+			")lU^%ClU^E%NTgZ3G(=",
+			")Wh\"GV1f",
+			")\"68^r:ec",
+			")fqbD(",
+			")WC=ugoGA5D;W):$er,",
+			"))C-GUJIaS",
+			")L=o_AP9P",
+			")NdYo&$20Qg",
+			")pgYQC!j0a!WljF3",
+			")>oHO#)<1j*p;&da!DMa+I2VdH8MO",
+			")b1/\"rmW%7_&8`kFT&",
+			")YGCk#[H8",
+			")k)Ba+BXD8Qo(-T<Nj9AhmY^i11u,",
+			")\\qEZ4&<Z",
+			")o_`b$T=GEf=KZ",
+			")09kg0;/bFeHL\\]R",
+			")d9I]#mBm_Zfp",
+			")>i5=",
+			")29i&01*U",
+			")sRVlHK&",
+			")244Wr)!I:`",
+			")5iDSK",
+			")8dAdP",
+			");Q>B]`/@BRJETD5%YQA-ufp_RGdW",
+			")EO;!",
+			")t(0_hDiOA",
+			")Vbj2M69",
+			")PVpdH",
+			")Etq_mU0H",
+			")lfUKA2<Z,1jXZ=N-$p",
+			")\"CL6D>*a",
+			")15g=$oKG",
+			")U\'TSSgMKH421",
+			")oFWX!",
+			")3AaS",
+			")#5hE56KT",
+			")K+6rPQ+s",
+			")Zs)\"2Hc(/_]^P",
+			")p5?D:Yte@c",
+			")21:X=/r",
+			")n\'>b*",
+			")\\)/-TGBO",
+			");VXhn;.6#IpZ@J8l&",
+			")1%]rquM6",
+			")N1:(e",
+			"):\"p]99m5\'9",
+			")IVF*E1RJ1QI%Ke0G#",
+			")gJado@0sYrII",
+			")*!KZ6pJpOj",
+			")gco/!1Grsm!a`\'Z<6",
+			")QX1\\\"",
+			");+L:L;1R,jW-qP[",
+			")*B^Ce>d\\W",
+			")uF<$Y1\"bJSpNN6s",
+			")$RIq[rG)V[9J@&42]",
+			")jaBF",
+			")/+,s1sUsrAmGk`NY%(;euUgo:3h1<BL+9",
+			")!`*i,%eYaA",
+			")\'RK&-BoP;t@/]WnV5_",
+			")u[[?O",
+			")O@oi^de#t$",
+			")8bFpE0cL:R",
+			")bHEO",
+			")oW()pN\"dXSWL",
+			")Cn@goLK6",
+			")B&",
+			")%Q-?`nD7i",
+			")/V)AjO4t5I&]%2b!F7L",
+			")oWVMIT9jI728H!)",
+			")6k#t)>Tm(?jEO\'6;$feChK#6gREP",
+			")pZGP!$G*OHo%]Gm5ES5/",
+			")6:\"gG1[O/E",
+			")ns+>p*&UFousnVK2s2",
+			")Zk",
+			")k-*i",
+			")_^",
+			")jXZ,fLk\\;&jXZD:</",
+			")I5H*ZuMBf",
+			")$UBSgbGY4",
+			")>&\\B\\KT5+Dii^c^>P]WY58Op2ET;",
+			")Gr;CF1f",
+			")^cGg@hA+\"Y1f",
+			")6,\"/#Q*",
+			")O`C\\M]jLS@Aette6:_",
+			")@^8\'<ZEh",
+			")Q,#!&G1CC7f^Ljo#r^PBm;@<L",
+			")eMg_@gct!^nBeH.;h",
+			")It2j@m\\jKk",
+			")bStu",
+			")e\'V2<YXSVn",
+			")\"Hd&+_IX",
+			")lU^EQp4n,EWaT",
+			")l:L\\euM0_t",
+			")$LrOZ;/6BT\\m__",
+			")$Ik`?1(C89m_",
+			")`p(H!O1\\SB[&",
+			")[JK*",
+			")&NObM9r",
+			")3\"b7JRuI>",
+			")nOgR",
+			")1oM)5G&NoulU_NB;a",
+			")3>?P1]%o7%dbJt1.J\'^",
+			")%CE!",
+			")NS*b4",
+			")?V>o%L%@Fdk<q`",
+			")B=FH",
+			")-ZNs\"/+fqQu/",
+			")`W&+&oB!D",
+			")`=)l1Cq",
+			")502\\Og\"]QD.Ve",
+			")e&..*bb1lg<s!RDI#8",
+			")i\"*#/",
+			")88fK",
+			")jL",
+			")8NsH",
+			")T:#ec",
+			")s<u-",
+			")o@YZ6Z7C]",
+			")Hhs6",
+			")>L,MW?JU:gEB.:K9TBh]41-P>iLX7b8(!",
+			")g#!+B[04$edbYc",
+			")IGGXIbD",
+			")HUNJeL<",
+			")c(Xn=:;[3RUC!SLb2G@*\'I(]",
+			")8u\\<IE6J$",
+			")1I9dC:sqauL:d;",
+			")nYgP9",
+			")Rn_1",
+			")Fs75o*g,k.>=1C",
+			")^,ns?[7)kjYEd",
+			")sXrA%Z#j0.o)+l4q*k^\"DMSG3NSf",
+			")89^O:GrbU.1rJI;$4`9gA(MTf5H",
+			")q,%NP?j",
+			")BWCMqaA@sP[pd[jnH?",
+			")5(fI5",
+			")02BU",
+			"):.es)AuL]\")s\'NbAA",
+			")IRp!?Z1$rQC0E6",
+			")%j",
+			")ioS)qpB7;,Q:\'f;$\",.XJ*PD&]rfD1jtclR0,cHM;&SF=Pfrpndg6-gR*+`\">\\Rpl.[+K,Xc]l&oP*-kOX?p%Wkhs@_dKk\'iFUa>b,\'7",
+			")*\'(Q",
+			")$)nnbHf@[9hMC6$ZKE",
+			").\"55hcg-",
+			")[R7]tH:;(Ra/+",
+			")=9B+",
+			");PVuFTI*/Jo+S:5",
+			")#;p:\'0&X`>6Z\"",
+			")H27O",
+			")p4eDIuMaG",
+			")*SD1%Z:I`mJ&\')_n1",
+			")f&\\L/P<B#2d^",
+			")Wm*Rm",
+			")I5H*ZuMBa",
+			")YJi)5Wl#,",
+			")lU^%ClU^E%NY74QWa)7-1Z@elG@(G$",
+			")OlA\"",
+			")pi?rPTI!)",
+			")IqXo",
+			")VV:8>>VVB",
+			")qK+_dDoW^",
+			")",
+			")Rd>VhL#MsoeG;C;/HC",
+			")c!%9",
+			")\'Osh2@&&e",
+			")p4`r/WQS;Z29j69u*bO(",
+			")H,M\'",
+			")@AN/`</ps",
+			")H/Sd!aLO8_&7Zk;ZtRlEnMn0>E!a#Ka\"",
+			")BDo,G\\G!M1C9ck(",
+			")GUcu_2+:nZBBkJC(^77Jmf,X+=$D",
+			")ZAeqOIf",
+			")jo5X#HHTtr/e%ED",
+			")mpb)n>+bfJ10Y9ibn.",
+			")YJio3",
+			")j0;hUI$@j_pi%q&TM",
+			")8%X%",
+			")u@eJIY@B[6oQ5+f",
+			")2t/gSTM",
+			")i%)%DEPN.&ZWX=1[0u",
+			")?*%2#h\"",
+			")K-5?h4(uTs-6(",
+			");V_M5lf-Il2Xunm",
+			")2rF)GTErbteo^LY",
+			")!-",
+			")p$IrcncigUoKta5j!_",
+			")kB;Nnrq",
+			")I3mnGoi9M@9ZVuelM",
+			")$aUCSH3^",
+			")uZ,\'Wj9K-/!/EAf",
+			")sqsN4j7D8T-71Q,FTaVoI^[sn(4q",
+			")%e.kR!@o@J6!]bh;pAe",
+			")n,-u6LtTLmO+mr`Y<",
+			")W4iaf&AE.(WBfrHp>Z>39kJpq%-%",
+			")PK:k%=9R>EL5hU6rsu26",
+			")Pemeo\"9sa\'Cq",
+			")f$;j;Y%q[I;$g*Z9Qd?",
+			")L*m.lA\\hd^fn@ZC@#",
+			")\\u)_?m0&>",
+			")\\H$D.OmU",
+			")*H?GP1Y3c,+F",
+			")2HVGHg^eqRW-7M.pY",
+			")Whn)1uofH)G<B\\`p/",
+			")l,lg",
+			")m@4GhI5>k@",
+			")!/!>+WBMM",
+			")W:!:<$jY@aAI",
+			")[WsPa82",
+			")CtZLm?3;na.>^kbmuJ",
+			")Gq:P,]I+;",
+			")(25=uL@.eT8D",
+			")Nu9H215a1V",
+			")>Xm=IaNOs:<#$7Q",
+			")TNPoj",
+			")M<#2D`3=^K",
+			")Ns4W.VnD-!F=P$XYT8p\"$noa,6R6TQDSD",
+			")l:L\\bWa)YEui\\gmN1l",
+			")=)U+JFQ%J3gL`",
+			")Teh!",
+			")DKfF&",
+			")6!na-KM",
+			")!S8N#1*!t",
+			")lU^%ClU^E%NTgZ3G(R;B!d0bX1q",
+			")\'j@n",
+			");W\"i@WjR`Eb<n,4",
+			")l:L\\;G@(361.cVMu=:,N1%]iOWaT",
+		};
+	local function A(A)
+		return P[A - 753408219 % 10463801];
+	end;
+	for A, V in ipairs({ { 576529 + -576528, 769782 - 769335 }, { 3497330065 % 13769016, 861822360 % 7303579 }, { -249178 + 249217, 274898 - 274451 } }) do
+		while V[-747407 - (-747408)] < V[188441 - 188439] do
+			P[V[777097 + -777096]], P[V[165823 - 165821]], V[83930316 % 883477], V[829405 - 829403] = P[V[3598340132 % 15577230]], P[V[66306310 % 960961]], V[163077 - 163076] + (-707547 - (-707548)), V[72835466 % 2801364] - (-147072 + 147073);
+		end;
+	end;
+	do
+		local A = type;
+		local V = string.char;
+		local l = {
+				g = -951109 - (-951110),
+				Y = 1225479140 % 11783453,
+				r = 592147 - 592108,
+				W = -756654 - (-756660),
+				w = 469653 - 469630,
+				E = -370483 + 370518,
+				s = 2693261424 % 15936458,
+				["4"] = 613024 + -613024,
+				k = 90318340 % 1530819,
+				D = 564133 + -564077,
+				["9"] = -1039990 + 1040004,
+				f = -640800 - (-640815),
+				K = 420891481 % 7941348,
+				["7"] = 139219 + -139207,
+				R = -969765 + 969810,
+				G = -233253 + 233301,
+				t = -939767 + 939813,
+				S = -65757 + 65773,
+				m = -370698 + 370730,
+				d = 582447557 % 6852324,
+				X = 128463 - 128403,
+				["5"] = -790523 - (-790561),
+				z = -251092 - (-251134),
+				T = 904892 - 904865,
+				B = -870889 + 870897,
+				a = -932354 - (-932356),
+				I = 790344020 % 3363166,
+				Q = 804042 + -804018,
+				h = 686856 - 686805,
+				O = 1405171443 % 11424158,
+				v = 597553 - 597512,
+				M = 492766 - 492714,
+				p = 3468551263 % 14215374,
+				l = 559651 + -559608,
+				n = -545488 - (-545492),
+				Z = 455072 - 455011,
+				x = -920764 + 920775,
+				C = 154491 + -154460,
+				P = 409787 + -409738,
+				["8"] = -702838 - (-702878),
+				H = 555918978 % 15883399,
+				["1"] = 317263 + -317208,
+				y = 407527 - 407491,
+				L = 142154 - 142097,
+				V = -251039 - (-251068),
+				e = -550630 + 550680,
+				F = 267067234 % 5563900,
+				j = -477808 + 477826,
+				u = 3650525773 % 15084817,
+				U = -427961 - (-428015),
+				["3"] = 536658 + -536638,
+				["0"] = -1012849 + 1012896,
+				["2"] = 550366 + -550333,
+				q = -846306 - (-846327),
+				b = -515583 - (-515636),
+				["+"] = 307581709 % 1450857,
+				N = -954043 + 954106,
+				o = 1036047532 % 15697689,
+				["/"] = 337320 - 337317,
+				A = 783576 - 783546,
+				i = 957472 - 957467,
+				J = 807611 - 807567,
+				["6"] = 401811 - 401749,
+				c = 175412 + -175386,
+			};
+		local C = {
+				l = 761807862 % 16561040,
+				["+"] = 426260 + -426202,
+				["="] = -23515 + 23524,
+				[","] = -66939 - (-67023),
+				["["] = 2275070080 % 14869739,
+				u = 791586 + -791551,
+				R = -671813 + 671825,
+				m = -1001687 - (-1001764),
+				S = -492791 + 492874,
+				["?"] = 413786811 % 7013335,
+				G = 937179490 % 9762286,
+				["\""] = -280123 + 280131,
+				F = -83103 - (-83117),
+				t = -586720 - (-586739),
+				c = 31577 - 31503,
+				["%"] = 19149 - 19085,
+				K = 149708 - 149704,
+				a = -764018 + 764069,
+				i = 395418 + -395378,
+				["@"] = 660068 + -659998,
+				q = 548039993 % 9448964,
+				["]"] = -731549 + 731612,
+				["8"] = -220164 - (-220207),
+				r = -843648 - (-843720),
+				["<"] = -282516 - (-282533),
+				["`"] = 841229 - 841223,
+				E = 823935 + -823859,
+				L = -935296 + 935335,
+				p = 1875613324 % 8486938,
+				D = 540460 + -540455,
+				["#"] = -80215 - (-80275),
+				C = 934396 + -934351,
+				["2"] = 1934042278 % 8229967,
+				["!"] = -291788 + 291809,
+				P = 2830166795 % 11599044,
+				V = 273359455 % 5062212,
+				["*"] = -359962 - (-360028),
+				X = 1007181 + -1007134,
+				["0"] = 561287 - 561208,
+				["7"] = 371809480 % 8082813,
+				["$"] = 1361944918 % 5770953,
+				_ = 516906 + -516895,
+				[")"] = 738764 - 738720,
+				[">"] = -212273 + 212346,
+				["/"] = 264920741 % 1305028,
+				["3"] = 169450 - 169398,
+				B = -152789 + 152838,
+				W = -411626 - (-411658),
+				["&"] = -127077 - (-127119),
+				N = -492187 + 492224,
+				["9"] = 775475707 % 5461096,
+				U = -133967 - (-134020),
+				["\'"] = 564901 + -564898,
+				M = 1292199241 % 10679332,
+				Y = 980104958 % 3952036,
+				g = 588729 + -588714,
+				H = 727695226 % 3532501,
+				n = 183162 + -183138,
+				["-"] = 218979 - 218961,
+				["^"] = -306387 + 306435,
+				["("] = 120816 - 120745,
+				h = 81542194 % 668378,
+				e = -484967 - (-484992),
+				[";"] = 354920 + -354892,
+				["."] = 4079404167 % 16252606,
+				[":"] = 341682 + -341602,
+				Z = -622686 - (-622748),
+				Q = -1006458 - (-1006508),
+				s = -383493 - (-383534),
+				A = -3191 - (-3191),
+				I = 278750 - 278723,
+				T = 92521 - 92490,
+				f = 627536502 % 7470672,
+				["1"] = -856190 + 856226,
+				O = -657214 + 657215,
+				["5"] = 905595 + -905530,
+				b = 23557360 % 981556,
+				["6"] = 1408331402 % 10059510,
+				k = -752267 - (-752296),
+				["4"] = 830812 - 830744,
+				J = -251135 - (-251190),
+				j = 415611191 % 2734284,
+				o = 898331 - 898293,
+				["\\"] = -1028326 - (-1028393),
+				d = 1341087290 % 5279871,
+			};
+		local o = math.floor;
+		local X = table.concat;
+		local E = table.insert;
+		local I = string.sub;
+		local v = string.len;
+		local w = P;
+		for P = 2966192345 % 12156526, #w, -122843 + 122844 do
+			local L = w[P];
+			if A(L) == "string" then
+				local A = I(L, 2789174886 % 15076621, -73093 - (-73094));
+				if A == "]" then
+					L = I(L, 384931 + -384929);
+					local A = v(L);
+					local C = {};
+					local a = -966080 + 966081;
+					local r = -356041 - (-356041);
+					local g = -655350 + 655350;
+					while a <= A do
+						local P = I(L, a, a);
+						local X = l[P];
+						if X then
+							r = r + X * ((-859787 - (-859851)) ^ (((334599 + -334596) - g)));
+							g = g + 1020088021 % 7286343;
+							if g == 447456964 % 2071560 then
+								g = 806735 - 806735;
+								local P = o(r / (852054 + -786518));
+								local A = o((r % (219560044 % 988714)) / (950981 - 950725));
+								local l = r % (-574992 + 575248);
+								E(C, V(P, A, l));
+								r = -607580 - (-607580);
+							end;
+						elseif P == "=" then
+							E(C, V(o(r / (139706 + -74170))));
+							if a >= A or I(L, a + 685691161 % 16325980, a + (550966 + -550965)) ~= "=" then
+								E(C, V(o((r % (1813863760 % 8555652)) / (84882 + -84626))));
+							end;
+							break;
+						end;
+						a = a + 845439557 % 7164742;
+					end;
+					w[P] = X(C);
+				elseif A == ")" then
+					L = I(L, 1936017020 % 8760258);
+					local A = v(L);
+					local l = {};
+					local a = -921086 + 921087;
+					while a <= A do
+						local P = (A - a) + 3732176229 % 14869228;
+						local X = P >= -14313 + 14318 and -393922 - (-393927) or P;
+						local v = -498879 - (-498879);
+						local w = X > -996159 + 996160;
+						for P = -16741 - (-16741), 2969334608 % 15794333, -839653 - (-839654) do
+							local A;
+							if P < X then
+								local V = I(L, a + P, a + P);
+								A = C[V];
+								if not A then
+									w = false;
+									break;
+								end;
+							else
+								A = 687110 - 687026;
+							end;
+							v = v * (-1015713 - (-1015798)) + A;
+						end;
+						if w then
+							local P = o(v / (844562 + 15932654)) % (32125 - 31869);
+							local A = o(v / (941305 + -875769)) % (726432 - 726176);
+							local C = o(v / (-281085 + 281341)) % (153849640 % 1012167);
+							local I = v % (673052 - 672796);
+							if X == 468564004 % 2046131 then
+								E(l, V(P, A, C, I));
+							elseif X == -807999 - (-808003) then
+								E(l, V(P, A, C));
+							elseif X == -803375 - (-803378) then
+								E(l, V(P, A));
+							elseif X == 3070027583 % 16776107 then
+								E(l, V(P));
+							end;
+						end;
+						a = a + X;
+					end;
+					w[P] = X(l);
+				end;
+			end;
+		end;
+	end;
+	return (function(o, X, P, E, C, I, l, L, r, j, v, Z, Y, a, V, H, e, T, w, d, y, g, F)
+		d, a, v, T, r, g, L, V, w, H, F, Y, y, Z, j, e = function(P)
+				w[P] = w[P] - (-793665 - (-793666));
+				if w[P] == 1615949505 % 6761295 then
+					w[P], v[P] = nil, nil;
+				end;
+			end, -204561 + 204561, {}, function(P, A)
+				local l = r(A);
+				local C = function(C, o)
+						return V(P, { C, o }, A, l);
+					end;
+				return C;
+			end, function(P)
+				for A = 1041966 + -1041965, #P, 119834 - 119833 do
+					w[P[A]] = (-386323 - (-386324)) + w[P[A]];
+				end;
+				if C then
+					local V = C(true);
+					local l = X(V);
+					l[A(-658489 + 673450)], l[A(686312 + -671331)], l[A(523610 - 508959)] = P, g, function()
+							return 652381 + -945434;
+						end;
+					return V;
+				else
+					return o({}, { [A(935139101 % 15585402)] = g, [A(-827011 + 841972)] = P, [A(-933223 - (-947874))] = function()
+							return 148799 + -441852;
+						end });
+				end;
+			end, function(P)
+				local A, V = 831721 + -831720, P[-156427 + 156428];
+				while V do
+					w[V], A = w[V] - (473787 - 473786), (-451155 + 451156) + A;
+					if 913210 - 913210 == w[V] then
+						w[V], v[V] = nil, nil;
+					end;
+					V = P[A];
+				end;
+			end, function()
+				a = (354456 + -354455) + a;
+				w[a] = -841212 + 841213;
+				return a;
+			end, function(V, C, o, X)
+				local c, Cr, vr, Tr, Pr, m, Vr, gr, R, w, q, I, F, Zr, t, W, f, N, z, b, K, Fr, D, dr, r, Q, u, k, p, J, B, S, lr, O, i, er, Er, mr, rr, Lr, G, wr, jr, Yr, Xr, ar, Ir, x, U, Hr, Ar, s, a, g, n, h, yr, M;
+				while V do
+					if V > 238146 + 8058628 then
+						if V < -194216 + 12615104 then
+							if V < -654136 + 10846855 then
+								if V > 5987565386 % 24501018 then
+									if 8668225 - (-994649) > V then
+										if V < 1094633623 % 15957163 then
+											if 1686021737 % 21494791 > V then
+												if V < -161953 + 9529373 then
+													V = v[o[653337 - 653336]];
+													g = A(1215641810 % 15787362);
+													w = v[o[1224903362 % 15311292]];
+													a = v[o[617625 - 617622]];
+													F = -514160 + 32473892279169;
+													r = a(g, F);
+													I = w[r];
+													w = 700899 - 700779;
+													V[I] = w;
+													V = -926743 + 8016082;
+												elseif V < 9012799 - (-383709) then
+													I = v[o[723385749 % 15725777]];
+													V = I and -750439 + 3119798 or -687941 + 6357471;
+												else
+													x = v[o[-990112 + 990114]];
+													t = v[o[528077055 % 14668807]];
+													N, b = 22898184547358 - (-867720), A(253433074 % 14078801);
+													J = t(b, N);
+													I = x[J];
+													V = A(-322439 + 337021);
+													V = c[V];
+													V = V(c, I);
+													x = V;
+													V, I = x and 404159 + 13777054 or 1516238363 % 12342377, x;
+												end;
+											else
+												if 10429067 - 941370 > V then
+													a = L();
+													w = L();
+													r = Y(5747160 - 1040194, {
+															o[687821 + -687820],
+															o[170884188 % 1412266],
+															o[565547 + -565544],
+															w,
+															a,
+														});
+													v[w] = C[-193789 + 193790];
+													w = d(w);
+													I = A(655986522 % 6368659);
+													v[a] = C[-638788 - (-638790)];
+													a = d(a);
+													V = P[I];
+													I = V(r);
+													I, V = {}, P[A(718871 + -704231)];
+												else
+													V, I = P[A(2261096057 % 14778309)], {};
+												end;
+											end;
+										else
+											if V < -911949 + 10470968 then
+												a = v[o[682563 + -682560]];
+												r, N, J = 322073 - 322041, 257956576 % 16122270, 380846 - 380844;
+												w = a % r;
+												n = 341639534 % 9233494;
+												m = v[o[1400945643 % 6091068]];
+												r = 876598 - 876585;
+												F = m - w;
+												V, m = 3959183 - (-76465), -115401 + 115433;
+												g = F / m;
+												a = r - g;
+												F = v[o[832691231 % 7782161]];
+												x = v[o[127302422 % 2121707]];
+												t = J ^ a;
+												c = x / t;
+												m = F(c);
+												t, F = 488498571 % 5747042, 120706647088 % 4311543696;
+												g = m % F;
+												m, a = -843330 + 843332, nil;
+												F = m ^ w;
+												r = g / F;
+												F = v[o[445456 + -445452]];
+												w = nil;
+												x = r % t;
+												t = -755332 + 4295722628;
+												c = x * t;
+												m = F(c);
+												F = v[o[-660282 + 660286]];
+												c = F(r);
+												g = m + c;
+												x, m, t = 358460 - 292924, -397085 - (-462621), 987994 - 987738;
+												F = g % m;
+												c = g - F;
+												m = c / x;
+												x = F % t;
+												g = nil;
+												b = F % N;
+												J = F - b;
+												b = -819122 - (-819378);
+												t = J / b;
+												b = -946697 + 946953;
+												J = m % b;
+												f = m % n;
+												N = m - f;
+												f, F, m = 2222072484 % 9832178, nil, nil;
+												b = N / f;
+												c, r = {
+														x,
+														t,
+														J,
+														b,
+													}, nil;
+												v[o[-984190 - (-984191)]] = c;
+											elseif 1751024867 % 15831258 > V then
+												V = A(550885 - 536304);
+												V = F[V];
+												V = V(F);
+												V = 9622879 - 975783;
+											elseif 10343383 - 711148 > V then
+												V, I = P[A(-489167 + 504085)], { w };
+											else
+												w = d(w);
+												I, V = {}, P[A(-664570 - (-679562))];
+											end;
+										end;
+									else
+										if 525455063 % 19827529 > V then
+											if -15686 + 9789997 > V then
+												a = v[o[380838361 % 6347306]];
+												w = not a;
+												V, I = w and -853570 + 16755644 or 2479590 - 6280, w;
+											elseif V < 53437 + 9829296 then
+												w, V, I, a = nil, P[A(616902 + -602045)], {}, nil;
+											elseif V < 2978912539 % 25160995 then
+												c = A(418234 - 403640);
+												V = v[o[-991562 + 991575]];
+												c = V[c];
+												c = c(V);
+												V = 3159125590 % 20869759;
+											else
+												V = v[o[1924149801 % 13455593]];
+												m = v[o[773530 - 773527]];
+												t = A(51756441 % 2069669);
+												c = v[o[2062556110 % 12204474]];
+												J = 23348396923894 - 848254;
+												x = c(t, J);
+												F = m[x];
+												c = v[o[2305572775 % 9646748]];
+												b = -153865 + 10446307945481;
+												x = v[o[444450472 % 2886042]];
+												J = A(-747557 - (-762532));
+												t = x(J, b);
+												m = c[t];
+												I = V(F, m);
+												V = 1173792263 % 15008490 > 5377978 - 653370;
+												I = { V };
+												V = P[A(-261796 + 276492)];
+											end;
+										else
+											if V < 769284 + 9209950 then
+												q = A(184452906 % 8019050);
+												Q = v[o[-822500 - (-822501)]];
+												K = 30650023042509 - (-88563);
+												U = v[o[-346044 + 346046]];
+												S = U(q, K);
+												M = V;
+												B = Q[S];
+												R = A(836824 - 821961);
+												R = F[R];
+												R = R(F, B);
+												V, k = R and 44259 + 10142431 or 2551664884 % 14039955, R;
+											elseif 5396669918 % 24937941 > V then
+												V = 3675059 - 250877;
+											elseif V < 285261 + 9873597 then
+												I = v[o[-358923 + 358925]];
+												F = v[o[1107942153 % 10551830]];
+												b, x, c = A(223190 - 208416), -20369 + 6365423115045, A(-864179 - (-879106));
+												m = F(c, x);
+												V = I[m];
+												N = -633757 + 19542786019113;
+												m = v[o[-428315 - (-428320)]];
+												x = v[o[697776 - 697774]];
+												t = v[o[-405499 + 405502]];
+												J = t(b, N);
+												c = x[J];
+												F = m[c];
+												I = { F };
+												g[V] = I;
+												V = 863405 + 1211845;
+											else
+												V = M;
+												V, s = 2483593 - 785126, k;
+											end;
+										end;
+									end;
+								else
+									if V > 2414887822 % 9821043 then
+										if V < 9487160 - 371655 then
+											if V < -526531 + 9492750 then
+												if 8193594 - (-629181) > V then
+													I = v[o[2373805907 % 16716943]];
+													F = A(-981858 - (-996612));
+													a = v[o[635900 + -635898]];
+													r = v[o[283183603 % 1618192]];
+													m = 26331387486464 - 422171;
+													g = r(F, m);
+													m = 300422 + 18352657435612;
+													w = a[g];
+													V = I[w];
+													w = V;
+													V = v[o[-917042 + 917043]];
+													a = v[o[1081431542 % 6361362]];
+													F = A(-442217 + 456947);
+													r = v[o[-448739 - (-448742)]];
+													g = r(F, m);
+													I = a[g];
+													m, F = 254474 + 9250589159113, A(45421803 % 2063960);
+													a = T(-527768 + 3569106, {});
+													V[I] = a;
+													V = v[o[-146513 - (-146517)]];
+													a = v[o[795004 - 795002]];
+													r = v[o[435390101 % 16745773]];
+													g = r(F, m);
+													I = a[g];
+													a = j(2299785517 % 22403236, {});
+													V[I] = a;
+													I, F, m = A(631812156 % 6942830), A(-964310 + 979295), 15287289 - 380043 > -844420 + 2408117;
+													V = P[I];
+													g = P[F];
+													F = { g(m) };
+													g = { V(l(F)) };
+													a, I, r, V = g[340564862 % 1384410], g[-319666 - (-319667)], g[555300 + -555297], 746220456 % 5942898;
+													g = I;
+												elseif -459911 + 9312525 > V then
+													V, I = P[A(941363 - 926686)], {};
+												else
+													V = v[o[804084 - 804074]];
+													I = A(751659444 % 15032897);
+													I = V[I];
+													I = I(V);
+													V = -904971 + 14366413;
+												end;
+											else
+												if 853515 + 8228949 > V then
+													I = v[o[909270 - 909266]];
+													F, m = A(342463 + -327505), 8344765807224 - (-791733);
+													a = v[o[637774 + -637772]];
+													r = v[o[-30691 - (-30694)]];
+													g = r(F, m);
+													w = a[g];
+													V = I[w];
+													w = V;
+													V = not w;
+													V = V and 3958733 - 153578 or 2589401 - 215210;
+												else
+													m = -398013 + 30101853276542;
+													a = v[o[-606514 - (-606515)]];
+													V, F = A(-1044743 + 1059732), A(445676 + -430977);
+													r = v[o[-688760 + 688762]];
+													w = C[656431731 % 5708102];
+													g = r(F, m);
+													I = a[g];
+													m, a, c, F, V = -212416 + 2638983004812, -481337 - (-481347), 888463 + 17776078836166, A(-675628 + 690608), w[V];
+													V = V(w, I, a);
+													a = v[o[198896 + -198895]];
+													r = v[o[987513752 % 16188750]];
+													g = r(F, m);
+													V, m = A(-869036 + 884025), A(-379243 - (-394073));
+													I = a[g];
+													a, V = 349829802 % 1681874, w[V];
+													V = V(w, I, a);
+													a = A(70259628 % 2809793);
+													I = P[a];
+													r = v[o[774126 - 774125]];
+													g = v[o[713157590 % 4987116]];
+													F = g(m, c);
+													a = r[F];
+													V = I[a];
+													c, m, a = -513054 + 18285459092832, A(-924360 + 939326), .3;
+													I = V(a);
+													I = v[o[2831860335 % 11237541]];
+													r = v[o[213995073 % 3343673]];
+													g = v[o[512075738 % 5885928]];
+													F = g(m, c);
+													a = r[F];
+													V = I[a];
+													V = V and 10155360 - (-323155) or -723938 + 12805221;
+												end;
+											end;
+										else
+											if 2179605671 % 17646053 > V then
+												x = 235878 + 24092244136556;
+												V = v[o[1172328136 % 9609247]];
+												g = v[o[-144162 - (-144165)]];
+												t, c = 6830813210694 - (-25638), A(439888681 % 13329511);
+												F = v[o[-731843 + 731847]];
+												m = F(c, x);
+												r = g[m];
+												F = v[o[-322449 - (-322452)]];
+												m = v[o[-75816 - (-75820)]];
+												x = A(1225893344 % 7808143);
+												c = m(x, t);
+												g = F[c];
+												I = V(r, g);
+												V = 26382450 % 4500278 < -930641 + 1042326;
+												I = { V };
+												V = P[A(-175165 + 189749)];
+											elseif V < 573031 + 8612683 then
+												I, V = { a }, P[A(-912514 - (-927215))];
+											elseif V < 136284 + 9107537 then
+												V, S = -403780 + 14139544, nil;
+											else
+												J, t = -207226 + 5764991529974, A(71113 - 56459);
+												g = v[o[-80216 - (-80222)]];
+												m = v[o[502124 - 502121]];
+												c = v[o[-50412 - (-50416)]];
+												x = c(t, J);
+												f = 182898 + 7721641788313;
+												F = m[x];
+												V, x = 3625557499 % 18636800, A(542651953 % 3523618);
+												c = P[x];
+												t = v[o[3820323 % 18192]];
+												N = A(135606 + -120654);
+												J = v[o[-522442 + 522446]];
+												b = J(N, f);
+												x = t[b];
+												J = 198942 - 198942;
+												m = c[x];
+												t, x = -246349 - (-246350), 164016 + -164015;
+												c = m(x, t, J);
+												g[F] = c;
+											end;
+										end;
+									else
+										if V < 804369 + 7753133 then
+											if V > 8564592 - 207296 then
+												if 2735775246 % 19907555 > V then
+													V = A(260920608 % 1304529);
+													r = v[o[1044216 + -1044213]];
+													m, c = A(751953322 % 14743897), -508274 + 19234668307566;
+													g = v[o[3125258434 % 14882183]];
+													F = g(m, c);
+													c, V = A(-377214 - (-392145)), a[V];
+													I = r[F];
+													V = V(a, I);
+													x, r = -214607 + 30771536854600, V;
+													g = v[o[-495360 - (-495363)]];
+													F = v[o[-113640 + 113644]];
+													m = F(c, x);
+													I = g[m];
+													V = A(518560 - 503752);
+													V = w[V];
+													V = V(w, I);
+													I, F, g = r, V, V;
+													V = r and 5308812 - (-148881) or 2093032532 % 15715290;
+												else
+													n, b = not f, b + N;
+													t = J >= b;
+													t = n and t;
+													n = b >= J;
+													n = f and n;
+													t = n or t;
+													n = -374756 + 12622353;
+													V = t and n;
+													t = 5863262758 % 30784645;
+													V = V or t;
+												end;
+											else
+												if 7794118 - (-511209) > V then
+													V = -753269 + 6246606;
+												elseif 4048072808 % 18197041 > V then
+													V, w, I = P[A(507007907 % 2414253)], nil, {};
+												else
+													c, V = nil, 2147385605 % 13422654;
+												end;
+											end;
+										else
+											if V < -931319 + 9544725 then
+												V = A(-963178 + 977759);
+												V = B[V];
+												V = V(B);
+												V = 14872979 - 400210;
+											elseif V < -180216 + 8815016 then
+												I = v[o[841031861 % 3805574]];
+												r = I();
+												V = 2849695400 % 15385421;
+											elseif -957195 + 9602926 > V then
+												V, g = -844850 + 16805475, nil;
+											else
+												m, b = A(891373 - 876602), 23367977864882 - 58417;
+												I = P[m];
+												c = v[o[1411238163 % 5880159]];
+												x = v[o[934372848 % 6399814]];
+												J = A(1269366654 % 14933550);
+												t = x(J, b);
+												b = 287589 + 26653820620054;
+												m = c[t];
+												V = I[m];
+												J = A(1071819766 % 6740913);
+												c = v[o[-718540 - (-718543)]];
+												x = v[o[-140194 + 140198]];
+												t = x(J, b);
+												m = c[t];
+												b, t = 22011219158100 - (-574389), A(337773 + -323149);
+												I = V(m);
+												J, m = 29254064461494 - (-335488), I;
+												I = v[o[-338202 + 338205]];
+												N = 64378399987910 % 32189208075833;
+												c = v[o[991663974 % 8195570]];
+												x = c(t, J);
+												V = I[x];
+												J = A(701623 + -686889);
+												c = v[o[669175749 % 4814214]];
+												x = v[o[876070 - 876066]];
+												t = x(J, b);
+												I = c[t];
+												J = 485796 + 4912848592715;
+												m[V] = I;
+												t = A(-954043 - (-968666));
+												I = v[o[659990235 % 4342041]];
+												c = v[o[-690240 + 690244]];
+												x = c(t, J);
+												t, J = A(-723074 + 737633), 26288798001092 - (-149517);
+												V = I[x];
+												I = 548095352 % 12374287 <= 4056748 - (-88022);
+												m[V] = I;
+												I = v[o[581494 + -581491]];
+												c = v[o[321360 + -321356]];
+												x = c(t, J);
+												V = I[x];
+												I = v[o[-188370 + 188375]];
+												t, b = A(463680 - 449093), -270423 + 19561083159531;
+												m[V] = I;
+												I = v[o[-888147 - (-888150)]];
+												J = 6002589381819 - (-120368);
+												c = v[o[1581242796 % 6375979]];
+												x = c(t, J);
+												V = I[x];
+												I = v[o[-193827 + 193833]];
+												r[V] = I;
+												I = v[o[18323600 % 446917]];
+												J = 421852 + 15668524412068;
+												c = v[o[1116081138 % 11388583]];
+												t = A(1883096757 % 9322189);
+												x = c(t, J);
+												J = A(890972 + -876280);
+												V = I[x];
+												c = v[o[2018770263 % 14628770]];
+												x = v[o[1622996522 % 6415006]];
+												t = x(J, b);
+												J = -570600 + 16793712759668;
+												I = c[t];
+												g[V] = I;
+												t = A(656245 - 641401);
+												I = v[o[454816 - 454813]];
+												c = v[o[984221140 % 13669738]];
+												x = c(t, J);
+												V = I[x];
+												I = a;
+												g[V] = I;
+												b = A(535503 + -520936);
+												V = v[o[-685276 + 685283]];
+												c = A(221170 - 206367);
+												I = V();
+												I = P[c];
+												x = v[o[-509880 - (-509883)]];
+												t = v[o[831827 - 831823]];
+												J = t(b, N);
+												c = x[J];
+												V = I[c];
+												c = v[o[-185489 + 185497]];
+												I = V(c, g);
+												c = A(482606 + -467803);
+												I = P[c];
+												x = v[o[945460 - 945457]];
+												b, N = A(115662 + -100669), 20555009125359 - (-473460);
+												t = v[o[-701543 - (-701547)]];
+												J = t(b, N);
+												c = x[J];
+												V = I[c];
+												x = v[o[-124041 - (-124050)]];
+												c = 875936 + -875935.5;
+												I = V(c, x);
+												V = v[o[374105885 % 5755475]];
+												V = V and -255422 + 9132578 or -936206 + 14397648;
+											end;
+										end;
+									end;
+								end;
+							else
+								if V > -806943 + 12171784 then
+									if 6931195882 % 28591533 > V then
+										if V < 11187290 - (-491270) then
+											if V < 3770103030 % 14915309 then
+												if 11769411 - 347200 > V then
+													O, V = h, D;
+													V = 9922870 - (-1008679);
+												elseif 11414656 - (-14497) > V then
+													q, V = W, O;
+													V = 388672988 % 23331507;
+												else
+													V = q and 691934524 % 6776072 or 8400305 - (-810183);
+												end;
+											else
+												if V < 4501904032 % 23633405 then
+													V = v[o[-1025518 - (-1025519)]];
+													r, a = V, C[89898312 % 2365745];
+													V = r[a];
+													V, w = V and 519629 + 7264660 or -906702 + 17369798, C[-939889 + 939890];
+												else
+													V = v[o[-628122 + 628123]];
+													a = { V() };
+													I, w = a[-95390 + 95391], a[244003 + -244001];
+													a = I;
+													I, r = a, V;
+													V = a and 2710153358 % 11315876 or 11098350 - (-930287);
+												end;
+											end;
+										else
+											if 16056 + 11697218 > V then
+												t, V = nil, 371346 + 16245729;
+											elseif V < 1373771319 % 15477207 then
+												V = -345580 + 6026015;
+												Vr = e(985340 + 8548987, {});
+												Ar = Vr;
+											elseif V < 12142467 - 213339 then
+												a = v[o[-537717 - (-537718)]];
+												c = A(2875929101 % 14237199);
+												g = v[o[255963 - 255961]];
+												x = 33827614660120 - 628880;
+												F = v[o[366475 + -366472]];
+												m = F(c, x);
+												r = g[m];
+												w = a[r];
+												I, V = w, w and -914822 + 6400114 or -142114 - (-614685);
+											else
+												V = r;
+												V = not I;
+												V = V and -747839 + 9869204 or 8781061 - 414063;
+											end;
+										end;
+									else
+										if V < 13183040 - 959554 then
+											if V < -867339 + 12938558 then
+												F, V, m = nil, 837606 + 2520600, nil;
+											elseif V < 836129126 % 24235610 then
+												V, I, w = P[A(294144 - 279362)], {}, nil;
+											elseif V < 2234976473 % 19846420 then
+												w = v[o[292139521 % 12172480]];
+												I = #w;
+												w = 941064614 % 7908106;
+												V = I == w;
+												V = V and 3137417330 % 16630717 or -150902 + 4186550;
+											else
+												f = 26799752556732 - (-376835);
+												g = v[o[103085 + -103079]];
+												m = v[o[115438429 % 2509531]];
+												c = v[o[2218210798 % 9520218]];
+												t, J = A(320405 - 305583), -965408 + 31421924455495;
+												x = c(t, J);
+												V, N = 360036 + 9658263, A(-969173 + 983788);
+												F = m[x];
+												x = A(511289961 % 6727305);
+												c = P[x];
+												t = v[o[725252 + -725249]];
+												J = v[o[1056963020 % 7141642]];
+												b = J(N, f);
+												x = t[b];
+												m = c[x];
+												t, J, x = 937488 - 937487, -762752 + 762752, -887020 - (-887020);
+												c = m(x, t, J);
+												g[F] = c;
+											end;
+										else
+											if 1843991701 % 26937370 > V then
+												t, R = b, A(972312 + -957683);
+												M = P[R];
+												R = A(-381546 + 396251);
+												k = M[R];
+												M = k(w, t);
+												k = v[o[314552230 % 3657584]];
+												R = k();
+												V, t = 9060644 - 547220, nil;
+												z = M + R;
+												s = z + c;
+												z = 47295 - 47039;
+												n = s % z;
+												M, c = 317183 - 317182, n;
+												k = c + M;
+												z = g[k];
+												s = x .. z;
+												x = s;
+											elseif -350157 + 12624776 > V then
+												V = v[o[-920725 + 920729]];
+												V = V and 809506417 % 6127148 or 3254306194 % 23312662;
+											elseif V < 160174 + 12164719 then
+												V = b;
+												V, t = 851152 + 5373758, J;
+											else
+												Er, Ir, Pr = A(-907370 - (-922268)), -452685 + 10183286078162, V;
+												lr = v[a];
+												Ar = A(-196113 + 211072);
+												Cr = v[r];
+												Xr = Cr(Er, Ir);
+												Vr = lr[Xr];
+												Ar = S[Ar];
+												Ar = Ar(S, Vr);
+												V, u = Ar and 5160775747 % 20143309 or 882533 + 15202594, Ar;
+											end;
+										end;
+									end;
+								else
+									if 3420555783 % 27063804 > V then
+										if V > 10971881 - 654113 then
+											if V < 4209671832 % 24557274 then
+												V, m = A(157466598 % 2539545), g;
+												V = a[V];
+												V = V(a, c);
+												x = V;
+												V, t = x and 1761830652 % 6948389 or 5319880456 % 26527170, x;
+											elseif V < 3012678763 % 22744152 then
+												W, Q, B = A(2121943859 % 16075219), A(2516886473 % 12973565), V;
+												S = v[o[1614768448 % 11786631]];
+												q = v[o[-330202 - (-330204)]];
+												Q, O = F[Q], 198715 + 18345974995236;
+												K = q(W, O);
+												U = S[K];
+												Q = Q(F, U);
+												V, R = Q and 15032844 - 99960 or 7548211 - (-738246), Q;
+											elseif -921654 + 11395096 > V then
+												V = I and 1010512 - (-212914) or 1779917395 % 18561056;
+											else
+												V = v[o[-446033 + 446037]];
+												I = V();
+												c = 77186 + 29292803622854;
+												V = v[o[3249654557 % 13373064]];
+												r = v[o[271981 + -271980]];
+												g = v[o[17419923 % 245351]];
+												m, I = A(-654666 + 669615), A(-578291 - (-593099));
+												F = g(m, c);
+												a = r[F];
+												I = V[I];
+												I = I(V, a);
+												a = I;
+												V = a and 2379326224 % 15839518 or 12509828 - 20651;
+											end;
+										else
+											if V > 9616656 - (-619915) then
+												if V < 9323380 - (-951994) then
+													V, a = 1045168 + 14314933, nil;
+												else
+													a, F = r(w, a);
+													V = a and 3587171 - 662430 or 1044225675 % 4482700;
+												end;
+											else
+												if V < 10793174 - 588792 then
+													J, V = A(439672518 % 8295433), 45604 + 960141;
+													c = v[o[855923 + -855921]];
+													b = -161868 + 26556060117146;
+													x = v[o[67899037 % 1170673]];
+													t = x(J, b);
+													m = c[t];
+													g = m;
+												elseif 868832095 % 19080213 > V then
+													V = v[o[-441672 - (-441673)]];
+													F = A(-54794 - (-69387));
+													a = v[o[1676369462 % 6814510]];
+													r = v[o[7507979 % 76612]];
+													m = 321926 + 11114895387313;
+													g = r(F, m);
+													I = A(637049 - 622241);
+													I = V[I];
+													w = a[g];
+													I = I(V, w);
+													w = I;
+													V = w and 13300018 - (-202486) or 1700233715 % 20090500;
+												else
+													D = V;
+													u = v[a];
+													Pr = v[r];
+													lr, p = 26992882553823 - 156358, A(400230887 % 8167672);
+													p, Vr = S[p], A(-563482 - (-578309));
+													Ar = Pr(Vr, lr);
+													i = u[Ar];
+													p = p(S, i);
+													V, h = p and 2877675262 % 22748078 or 767442 + 3517508, p;
+												end;
+											end;
+										end;
+									else
+										if V < 528235 + 10353458 then
+											if V > -576872 + 11283200 then
+												if V < 824768634 % 20349315 then
+													V = S and 2520806041 % 17833929 or 13423739 - (-312025);
+												else
+													a = v[o[1598903373 % 6473293]];
+													r = -166580 + 166581;
+													w = a * r;
+													a = 93588 + 18776412370067;
+													I = w + a;
+													w = 35184371428528 - (-660304);
+													V = I % w;
+													v[o[-1007718 - (-1007720)]] = V;
+													V = 16306002 - 984836;
+												end;
+											else
+												if V < 11586234 - 1017210 then
+													J, V = N, f;
+													V = N and 685609929 % 4658014 or -484287 + 12780039;
+												elseif -779419 + 11402782 > V then
+													J, F, b = A(-846740 - (-861367)), A(333181 - 318310), 735720 + 28409815792069;
+													g = P[F];
+													c = v[o[475153247 % 1939401]];
+													V = 1814086735 % 25331552;
+													x = v[o[464419 + -464416]];
+													t = x(J, b);
+													m = c[t];
+													F = A(2361722070 % 10638321);
+													F = g[F];
+													F = F(g, m);
+													I = F;
+												else
+													w = C[831000 + -830999];
+													a = v[o[-740084 + 740085]];
+													F = A(973429 - 958719);
+													r = v[o[213459851 % 1031207]];
+													m = -1027421 + 5841684805629;
+													g = r(F, m);
+													I = a[g];
+													V = w == I;
+													V = V and 183585473 % 6739342 or 7320326 - (-991491);
+												end;
+											end;
+										else
+											if 10735203 - (-190997) > V then
+												I = -352837 - (-352838);
+												N = #g;
+												V = b(I, N);
+												s, N = 64861225 % 2702551, V;
+												V = m(g, N);
+												f = V;
+												V = v[t];
+												n = f - s;
+												I = c(n);
+												N = nil;
+												V[f] = I;
+												I = #g;
+												f, n = nil, 478108 + -478108;
+												V = I == n;
+												V = V and 4342336874 % 31807941 or 278381 + 10642471;
+											elseif 5120073739 % 22910311 > V then
+												V, K = G, O;
+												V = 791514983 % 31056465;
+											elseif V < 2145540360 % 20521881 then
+												m, F = 6251093441710 - 815440, A(304262 + -289348);
+												I = v[o[660456 - 660455]];
+												a = v[o[1672334986 % 13167992]];
+												r = v[o[892823 + -892820]];
+												g = r(F, m);
+												w = a[g];
+												V = I[w];
+												w = V;
+												V = not w;
+												V = V and 3075978538 % 17810993 or 16242941 - (-435484);
+											else
+												g = v[o[-606223 - (-606224)]];
+												x, c = 9884550254804 - 687834, A(-709870 - (-724490));
+												F = v[o[480626 + -480624]];
+												m = F(c, x);
+												r = g[m];
+												t = A(193119050 % 12069015);
+												I = w[r];
+												g = v[o[423521959 % 16289306]];
+												J = -107482 + 33232160399436;
+												m = v[o[330799387 % 8705247]];
+												c = v[o[279867 - 279865]];
+												x = c(t, J);
+												F = m[x];
+												r = g[F];
+												V = I == r;
+												V = V and 1406228014 % 21780852 or 1493714 - (-759822);
+											end;
+										end;
+									end;
+								end;
+							end;
+						else
+							if V > -551671 + 15250320 then
+								if V > 14616724 - (-911172) then
+									if V > 15160854 - (-921147) then
+										if 5085269333 % 23909478 > V then
+											if V < 4032859953 % 26082788 then
+												wr, Vr, lr = 549172 + 15894469606325, V, A(1154832679 % 4582610);
+												Xr = v[a];
+												Er = v[r];
+												vr = A(-482227 + 496917);
+												Ir = Er(vr, wr);
+												lr = S[lr];
+												Cr = Xr[Ir];
+												lr = lr(S, Cr);
+												V, Ar = lr and 5311391022 % 29420174 or 351690 + -153967, lr;
+											elseif 15509505 - (-783564) > V then
+												J, V = A(886299 + -871644), 15410824 - (-98425);
+												t = P[J];
+												b = v[o[427614 - 427612]];
+												s, n = 3753397748770 - (-803505), A(1167979939 % 5588350);
+												N = v[o[-902105 - (-902108)]];
+												f = N(n, s);
+												N = 653886 + -653886;
+												J = b[f];
+												b = -728272 - (-728322);
+												x = t[J];
+												J = -265630 + 265630;
+												t = x(J, b, N);
+												m = t;
+											elseif 16799450 - 345970 > V then
+												M = A(399942 - 385100);
+												f = v[o[224229 - 224227]];
+												n = v[o[-32923 + 32926]];
+												k, z, R = 22398857731017 - (-937205), A(-778397 - (-793240)), 19556830684499 - (-818751);
+												s = n(z, k);
+												V, n = 511495614 % 3820523, A(272001 - 257116);
+												N = f[s];
+												b = r[N];
+												f = P[n];
+												s = v[o[93341477 % 2074255]];
+												z = v[o[594645167 % 4187642]];
+												k = z(M, R);
+												n = s[k];
+												z, s = -67741 - (-67741), 552301 - 552296;
+												N = f[n];
+												n = -1029540 - (-1029540);
+												f = N(n, s, z);
+												J = b + f;
+												x = J;
+											else
+												f = L();
+												s, g, R, B, k, m = {}, nil, A(-144312 - (-158978)), nil, A(882200 + -867239), nil;
+												n = L();
+												V = {};
+												N = L();
+												c = nil;
+												v[N] = V;
+												V = H(12182601 - 27111, {
+														N,
+														J,
+														x,
+														F,
+													});
+												v[f] = V;
+												V, b = {}, nil;
+												v[n] = V;
+												I = A(-208618 + 223329);
+												V = P[I];
+												F = d(F);
+												M = v[n];
+												z = { [k] = M, [R] = B };
+												I = V(s, z);
+												v[a] = I;
+												k = 8480872283502 - 290305;
+												V = j(12240962 - 781955, {
+														n,
+														N,
+														t,
+														J,
+														x,
+														f,
+													});
+												g = A(885477850 % 6149049);
+												n = d(n);
+												v[r] = V;
+												J = d(J);
+												V = P[g];
+												x = d(x);
+												m = v[a];
+												t = d(t);
+												b = 34719209871905 - 711418;
+												N = d(N);
+												J = 194579 + 3548487536225;
+												f = d(f);
+												g = A(670985 - 656348);
+												c = v[r];
+												t = A(259617337 % 3656372);
+												x = c(t, J);
+												J, Q, n = A(-402800 + 417754), A(675386 - 660820), 19211177989269 - (-446044);
+												F = m[x];
+												g = V[g];
+												g = g(V, F);
+												F = L();
+												v[F] = g;
+												g = A(28023 + -13229);
+												V = P[g];
+												N = 17671902796031 - 817370;
+												c = v[a];
+												x = v[r];
+												f = 87979 + 23369777025751;
+												t = x(J, b);
+												m = c[t];
+												b, g = A(-991740 + 1006422), A(-62720 + 77357);
+												g = V[g];
+												g = g(V, m);
+												m = L();
+												v[m] = g;
+												g = A(871403 + -856609);
+												V = P[g];
+												x = v[a];
+												t = v[r];
+												g = A(280840 + -266203);
+												J = t(b, N);
+												c = x[J];
+												g = V[g];
+												g = g(V, c);
+												c = L();
+												v[c] = g;
+												g = A(3231429282 % 13243502);
+												V = P[g];
+												t = v[a];
+												g = A(-324465 + 339102);
+												J = v[r];
+												N, g = A(723613 + -708887), V[g];
+												b = J(N, f);
+												x = t[b];
+												g = g(V, x);
+												x = L();
+												v[x] = g;
+												g = A(-510678 + 525472);
+												V = P[g];
+												g = A(-444146 - (-458783));
+												J = v[a];
+												b = v[r];
+												f = A(3789329757 % 16263154);
+												N = b(f, n);
+												n = A(305725 - 291065);
+												t = J[N];
+												s, g = 782270 + 15200910633960, V[g];
+												g = g(V, t);
+												t = L();
+												v[t] = g;
+												z, g = 477143 + 29239354862936, A(844274 - 829480);
+												V = P[g];
+												b = v[a];
+												g = A(2552090232 % 12095145);
+												N = v[r];
+												g = V[g];
+												f = N(n, s);
+												s = A(358900 + -344248);
+												J = b[f];
+												g = g(V, J);
+												J = L();
+												v[J] = g;
+												g = A(-847591 + 862385);
+												V = P[g];
+												N = v[a];
+												R = 1014334 + 25368306856935;
+												f = v[r];
+												g = A(249652 + -235015);
+												n = f(s, z);
+												g = V[g];
+												b = N[n];
+												g = g(V, b);
+												b = L();
+												M = 21941078869646 - 302757;
+												v[b] = g;
+												z, g = A(235840 - 221072), A(-696044 + 710838);
+												V = P[g];
+												f = v[a];
+												g = A(394419980 % 2043551);
+												n = v[r];
+												s = n(z, k);
+												g = V[g];
+												N = f[s];
+												g = g(V, N);
+												N = v[F];
+												k = A(-133824 - (-148494));
+												n = v[a];
+												s = v[r];
+												z = s(k, M);
+												f = n[z];
+												n = A(739733 + -724862);
+												V = N[f];
+												M = A(180821 + -165827);
+												N = L();
+												v[N] = V;
+												f = P[n];
+												s = v[a];
+												z = v[r];
+												k = z(M, R);
+												n = s[k];
+												U = -571231 + 29523268742418;
+												V = f[n];
+												f = L();
+												n = A(871753 + -856853);
+												v[f] = V;
+												V = v[N];
+												n = V[n];
+												n = n(V);
+												s = L();
+												v[s] = n;
+												z = v[N];
+												M = v[a];
+												R = v[r];
+												B = R(Q, U);
+												k = M[B];
+												n = z[k];
+												V = not n;
+												V = V and 280986 + 4323837 or -357729 + 4190925;
+											end;
+										else
+											if V < -386233 + 16926318 then
+												V = {};
+												v[o[-520962 - (-520964)]] = V;
+												I = v[o[312433 - 312430]];
+												F, c, g, t, x = 784983 + 35184371303849, 675391 - 675136, I, 945412 - 945411, A(812798 - 797830);
+												I = a % F;
+												v[o[1027857668 % 16060276]] = I;
+												m = a % c;
+												c = 490231 - 490229;
+												F = m + c;
+												c = A(1419506481 % 13781471);
+												v[o[-818818 - (-818823)]] = F;
+												b = 850457 + -850456;
+												m = #w;
+												J = m;
+												r[a] = c;
+												c = -791471 + 791711;
+												N = b;
+												b = 62768 - 62768;
+												f, V = N < b, 9530410 - 1016986;
+												b = t - N;
+											elseif V < 8178594717 % 32517717 then
+												x, V = nil, 3000757390 % 19059935;
+											elseif V < 16289294 - (-397997) then
+												F, m = A(630254 - 615374), 22974128655792 - (-449562);
+												a = v[o[752931 + -752929]];
+												r = v[o[268486 - 268483]];
+												g = r(F, m);
+												I = a[g];
+												V = A(-108004 + 122812);
+												V = w[V];
+												V = V(w, I);
+												a = V;
+												V = not a;
+												V = V and -294329 + 5195002 or 2820242 - (-958599);
+											else
+												I = A(376077 - 361178);
+												V = v[o[30957476 % 424075]];
+												I = V[I];
+												I = I(V);
+												I, V = {}, P[A(420181 + -405428)];
+											end;
+										end;
+									else
+										if 16819176 - 975636 > V then
+											if V > 923253 + 14831884 then
+												if -117923 + 15890277 > V then
+													u, V = Ar, Vr;
+													V = -965238 + 5053881;
+												else
+													g = A(372063219 % 8455642);
+													V = v[o[3041964911 % 14148674]];
+													m, F = 964723 + 14712204206671, 199215 + 13782583135971;
+													w = v[o[-549392 + 549394]];
+													a = v[o[1070997425 % 4266922]];
+													r = a(g, F);
+													I = w[r];
+													w = 976144 + 4296343 > 7130207 - 694447;
+													V[I] = w;
+													V = v[o[591390277 % 10023564]];
+													F, g = 5270243857954 - (-439156), A(471214621 % 7986437);
+													w = v[o[1503500212 % 7913159]];
+													a = v[o[2911545657 % 16733021]];
+													r = a(g, F);
+													I = w[r];
+													w = 336867343 % 14569869 < -299551 + 734930;
+													V[I] = w;
+													V = v[o[-477051 + 477052]];
+													F = 3077690630652 - (-9117);
+													w = v[o[-5437 - (-5439)]];
+													g = A(-97003 - (-111970));
+													a = v[o[-949464 - (-949467)]];
+													r = a(g, F);
+													I = w[r];
+													w = 158952502 % 2722142 > 26428114 % 10952046;
+													V[I] = w;
+													V = v[o[1009842373 % 10304514]];
+													I = A(276269 - 261406);
+													a = v[o[-792572 - (-792574)]];
+													I = V[I];
+													r = v[o[793092 - 793089]];
+													F = A(921388255 % 4451079);
+													g = r(F, m);
+													w = a[g];
+													I = I(V, w);
+													V = I and 88314 - 37563 or 1121134859 % 11410147;
+												end;
+											else
+												if V < 3320643729 % 25423470 then
+													x, V = 20585112537144 - (-384313), r;
+													r = I;
+													g = v[o[1679921634 % 7118312]];
+													c = A(-360088 + 374734);
+													F = v[o[54785348 % 10957069]];
+													m = F(c, x);
+													I = g[m];
+													m = v[o[-333921 + 333925]];
+													F, g = V, m;
+													V = m and 1006687908 % 4490446 or 2382366270 % 26013907;
+												elseif 15469805 - (-224839) > V then
+													I, V = r, 2825879851 % 26789953;
+												else
+													g, V = m, c;
+													V = m and 748151551 % 11320391 or 10790678 - 591930;
+												end;
+											end;
+										else
+											if V < 1333420776 % 30639289 then
+												V = I and 12630841 - (-377766) or 5936248577 % 29466877;
+											elseif 3152430373 % 29870756 > V then
+												V = v[o[-653372 + 653377]];
+												I = V();
+												V = v[o[996965 - 996959]];
+												V = V and 3531658901 % 17034524 or 3753779460 % 16942993;
+											elseif V < -991370 + 17051489 then
+												i = A(202242437 % 2298040);
+												W = v[U];
+												K = V;
+												h = v[a];
+												D = v[r];
+												u = 4938785792902 - 1038987;
+												p = D(i, u);
+												O = A(216885 - 202022);
+												O = W[O];
+												G = h[p];
+												O = O(W, G);
+												q, V = O, O and 15826156 - 457280 or 8393048 - 190165;
+											else
+												I = v[o[709670 + -709664]];
+												t = 6952150014774 % 47945944226;
+												F = v[o[865277 + -865276]];
+												x = A(342629 + -327887);
+												m = v[o[975778 + -975776]];
+												c = m(x, t);
+												g = F[c];
+												m = v[o[-775374 - (-775375)]];
+												c = v[o[399596 - 399594]];
+												t, J = A(-960156 - (-975135)), 34444797251237 - 331774;
+												x = c(t, J);
+												F = m[x];
+												r = I(g, F);
+												r = v[o[161561753 % 646247]];
+												t, x = 11250728494266 - 954435, A(303276 + -288545);
+												F = v[o[166588 + -166587]];
+												m = v[o[-618911 + 618913]];
+												c = m(x, t);
+												g = F[c];
+												I = r[g];
+												V = I and -877474 + 9502707 or 3962861 - 570346;
+											end;
+										end;
+									end;
+								else
+									if 34233 + 15131127 > V then
+										if 15984352 - 967544 > V then
+											if V < 4280153434 % 23696362 then
+												if V < -249858 + 15009875 then
+													f = v[o[-433349 - (-433350)]];
+													J = V;
+													n = v[o[678894722 % 2828728]];
+													z, k = A(836160876 % 4619591), 11754781186754 - (-342687);
+													s = n(z, k);
+													N = f[s];
+													b = A(1785383686 % 10320051);
+													b = F[b];
+													b = b(F, N);
+													t, V = b, b and -822052 + 16218134 or 1930457 - 630002;
+												elseif 1041798 + 13743751 > V then
+													b = v[o[107946 - 107945]];
+													x, n, s = V, A(-710782 + 725394), 10115836989776 - 327402;
+													N = v[o[461978 - 461976]];
+													f = N(n, s);
+													t = A(-857531 - (-872394));
+													t = F[t];
+													J = b[f];
+													t = t(F, J);
+													V, c = t and -879050 + 1223814 or -728823 + 15470677, t;
+												else
+													M = 31451395047874 - (-735091);
+													n = v[o[614382 + -614380]];
+													k = A(-852248 + 866989);
+													s = v[o[135869 + -135866]];
+													z = s(k, M);
+													f = n[z];
+													N = A(-147799 - (-162662));
+													N = x[N];
+													N = N(x, f);
+													V, J = 4591895 - (-782005), N;
+												end;
+											else
+												if V < 264378 + 14613880 then
+													G, h, Ar = V, A(811827 - 796868), 19313108874491 - (-978470);
+													p = v[a];
+													i = v[r];
+													h, Pr = S[h], A(817646 - 802914);
+													u = i(Pr, Ar);
+													D = p[u];
+													h = h(S, D);
+													O, V = h, h and 397857374 % 15477033 or 11024860 - 789857;
+												else
+													k, V = R, B;
+													V = -54226 + 10240916;
+												end;
+											end;
+										else
+											if V < -368028 + 15470073 then
+												c, t = V, V;
+												V, x = r and 948963 + 15501099 or 2933043 - (-433012), r;
+											elseif -232110 + 15355024 > V then
+												V, q = W, K;
+												V = 5156310793 % 20335492;
+											elseif 4455300878 % 23871815 > V then
+												G = A(2230068186 % 9489589);
+												O = P[G];
+												i = A(-848429 - (-863048));
+												h = v[a];
+												D = v[r];
+												u = 29316321706209 - (-210034);
+												p = D(i, u);
+												i, Xr = A(682136 - 667576), 14038444184772 - 523067;
+												G = h[p];
+												u = 15121662356717 - 1036652;
+												V = O[G];
+												h = v[a];
+												D = v[r];
+												p = D(i, u);
+												G = h[p];
+												O = V(G);
+												G = v[a];
+												p = A(-851925 - (-866609));
+												h = v[r];
+												i = -304427 + 7424386462380;
+												D = h(p, i);
+												V = G[D];
+												Ar = A(965107 - 950211);
+												h = v[a];
+												u, Pr, i = 449672 + 11099547170728, 17464971565299 - 833839, A(817288 + -802667);
+												D = v[r];
+												p = D(i, u);
+												G = h[p];
+												O[V] = G;
+												p, i = A(-452658 + 467261), -926822 + 21908840647744;
+												G = v[a];
+												h = v[r];
+												D = h(p, i);
+												V = G[D];
+												G = 1139984 - 76178 >= 483749 + 13199335;
+												O[V] = G;
+												i, p = 16807434647669 % 76397471894, A(606990 - 592442);
+												G = v[a];
+												Cr = 816836 + 25714164774914;
+												h = v[r];
+												D = h(p, i);
+												V = G[D];
+												h, G = A(97889 - 83118), k;
+												O[V] = G;
+												G = P[h];
+												D = v[a];
+												p = v[r];
+												u = A(2551046771 % 10370048);
+												i = p(u, Pr);
+												u = A(-608631 - (-623377));
+												h = D[i];
+												V = G[h];
+												D = v[a];
+												p = v[r];
+												Pr = 6267251954208 - (-1046854);
+												i = p(u, Pr);
+												h = D[i];
+												Vr = 11484090056207 - (-530132);
+												G = V(h);
+												i = A(574149 - 559320);
+												u = 8452716077522 - 234098;
+												h = v[a];
+												D = v[r];
+												p = D(i, u);
+												V = h[p];
+												p = A(883078 - 868149);
+												D = P[p];
+												i = v[a];
+												u = v[r];
+												Pr = u(Ar, Vr);
+												u, Vr = 2435531283 % 14242873, -558233 + 19149806872430;
+												p = i[Pr];
+												Pr = 72255300 % 12042545;
+												h = D[p];
+												p, i = -477204 + 477204, 163716 - 163656;
+												D = h(p, i, u, Pr);
+												i = A(201972394 % 5939934);
+												G[V] = D;
+												u = 317963 + 25960442172717;
+												h = v[a];
+												D = v[r];
+												p = D(i, u);
+												V = h[p];
+												p = A(1103267889 % 5995940);
+												D = P[p];
+												i = v[a];
+												u = v[r];
+												lr, Ar = A(1145796558 % 8680164), A(1724816475 % 8711119);
+												Pr = u(Ar, Vr);
+												p = i[Pr];
+												u = .02;
+												h = D[p];
+												i, Pr, p = 626123 - 626153, -614438 + 614438, 841967.5 - 841967;
+												D = h(p, i, u, Pr);
+												i, Pr = A(-459285 - (-474102)), A(740486 - 725923);
+												G[V] = D;
+												h = v[a];
+												D = v[r];
+												u = 14258559692953 - (-731478);
+												p = D(i, u);
+												V = h[p];
+												u, h, i = 32494220435784 - 845357, 661928 - 661927, A(79928355 % 1630887);
+												G[V] = h;
+												h = v[a];
+												D = v[r];
+												p = D(i, u);
+												Ar = 2300 + 9222230935498;
+												V = h[p];
+												h = O;
+												G[V] = h;
+												D = A(-703698 + 718469);
+												h = P[D];
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												D = p[u];
+												V = h[D];
+												p = v[a];
+												i = v[r];
+												Pr, Ar = A(787751 + -773181), -417084 + 7481863989976;
+												u = i(Pr, Ar);
+												D = p[u];
+												Pr = A(95354 + -80781);
+												h = V(D);
+												D = L();
+												v[D] = h;
+												V = v[D];
+												Ar = 777840 + 20208032122450;
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												h = p[u];
+												u = A(1034033 + -1019104);
+												i = P[u];
+												Pr = v[a];
+												Ar = v[r];
+												Vr = Ar(lr, Cr);
+												u = Pr[Vr];
+												Cr = 4351401314171 - 98193;
+												p = i[u];
+												Vr, u, Ar, Pr = 184197 - 184197, 92748349 % 13249764, 489704551 % 9794091, -927119 - (-927119);
+												i = p(u, Pr, Ar, Vr);
+												V[h] = i;
+												Pr = A(676339 + -661401);
+												V = v[D];
+												p = v[a];
+												i = v[r];
+												Ar = 23677632408040 - 638679;
+												u = i(Pr, Ar);
+												Pr, lr = A(3375175962 % 15341641), A(949818 + -935217);
+												h = p[u];
+												Ar, p = 36503 + 23564487842886, -891476 + 891477;
+												V[h] = p;
+												V = v[D];
+												Vr = 829801 + 12608133016966;
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												h = p[u];
+												i = v[a];
+												Ar = A(157635615 % 2814654);
+												u = v[r];
+												Pr = u(Ar, Vr);
+												p = i[Pr];
+												V[h] = p;
+												V = v[D];
+												Ar = -845007 + 34913656071248;
+												p = v[a];
+												i = v[r];
+												Pr = A(978183088 % 5404245);
+												u = i(Pr, Ar);
+												h = p[u];
+												u = A(3062799814 % 15087611);
+												i = P[u];
+												Pr = v[a];
+												Ar = v[r];
+												Vr = Ar(lr, Cr);
+												u = Pr[Vr];
+												p = i[u];
+												Ar, u, Cr, Pr = -81880 - (-81881), 10490 + -10489, A(-895140 - (-909787)), 312395 - 312394;
+												i = p(u, Pr, Ar);
+												Ar = 228970 + 7963446267922;
+												V[h] = i;
+												Pr = A(1336839297 % 5787120);
+												V = v[D];
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												h = p[u];
+												p = 612655 + 1188288 < 1894379965 % 10781777;
+												V[h] = p;
+												V = v[D];
+												Ar = 19027046182224 - 363188;
+												p = v[a];
+												i = v[r];
+												Pr = A(361698 + -346913);
+												u = i(Pr, Ar);
+												Pr = A(490026283 % 5764843);
+												h = p[u];
+												Ir = A(-219513 - (-234460));
+												u = P[Pr];
+												Ar = v[a];
+												Vr = v[r];
+												lr = Vr(Cr, Xr);
+												Xr = 1016333 + 8725454294482;
+												Pr = Ar[lr];
+												i = u[Pr];
+												Cr = 6463552786354 - 279537;
+												Pr = v[a];
+												Ar = v[r];
+												lr = A(354856 - 340011);
+												Vr = Ar(lr, Cr);
+												u = Pr[Vr];
+												Pr = A(-755818 + 770787);
+												p = i[u];
+												Ar, Cr = 24868728960075 - (-637169), A(-850099 - (-864824));
+												V[h] = p;
+												V = v[D];
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												h = p[u];
+												Pr = A(3035305162 % 13026998);
+												u = P[Pr];
+												Ar = v[a];
+												Vr = v[r];
+												lr = Vr(Cr, Xr);
+												Cr = 181748 + 18686370798601;
+												Pr = Ar[lr];
+												i = u[Pr];
+												lr = A(-410228 - (-424897));
+												Pr = v[a];
+												Ar = v[r];
+												Vr = Ar(lr, Cr);
+												Ar = -825679 + 24995873932998;
+												u = Pr[Vr];
+												Pr = A(1966776483 % 7743157);
+												p = i[u];
+												Cr = A(3008394584 % 16002021);
+												V[h] = p;
+												V = v[D];
+												p = v[a];
+												i = v[r];
+												u = i(Pr, Ar);
+												Xr, Pr = -694606 + 2857405816448, A(813290 + -798662);
+												h = p[u];
+												vr = -552894 + 29462066521429;
+												u = P[Pr];
+												Ar = v[a];
+												Vr = v[r];
+												lr = Vr(Cr, Xr);
+												Pr = Ar[lr];
+												Cr = -800933 + 33808033117732;
+												i = u[Pr];
+												Xr = 13956953791418 - 1032791;
+												Pr = v[a];
+												lr = A(1042951945 % 9747077);
+												Ar = v[r];
+												Vr = Ar(lr, Cr);
+												u = Pr[Vr];
+												p = i[u];
+												V[h] = p;
+												V = v[D];
+												p = v[a];
+												i = v[r];
+												Pr, Ar = A(344461727 % 4415986), -639243 + 32420259904515;
+												u = i(Pr, Ar);
+												h = p[u];
+												p = G;
+												V[h] = p;
+												h = A(541065955 % 2847638);
+												V = P[h];
+												p = L();
+												h = V();
+												V = -823855 + 823855;
+												v[p] = h;
+												h = L();
+												Cr = A(-592427 + 606979);
+												i = L();
+												v[h] = V;
+												V = 517459 - 517459;
+												v[i] = V;
+												u = v[m];
+												Ar = v[a];
+												Vr = v[r];
+												lr = Vr(Cr, Xr);
+												Pr = Ar[lr];
+												V = u[Pr];
+												u = A(-828337 + 842902);
+												u = V[u];
+												Pr = e(-240532 + 14502855, {
+														h,
+														p,
+														a,
+														r,
+														i,
+														D,
+													});
+												u = u(V, Pr);
+												Pr = A(1062490 - 1047715);
+												V = e(144797524 % 14452449, { a, r });
+												u = V;
+												V = P[Pr];
+												Xr = 34137028443661 - (-147467);
+												Ar = v[a];
+												Vr = v[r];
+												Cr = A(87120 + -72176);
+												lr = Vr(Cr, Xr);
+												Pr = Ar[lr];
+												Vr, Ar = A(596802616 % 5850861), u;
+												V[Pr] = Ar;
+												Pr = A(-847171 - (-861857));
+												V = P[Pr];
+												Ar = P[Vr];
+												Cr = v[a];
+												Xr = v[r];
+												Er = Xr(Ir, vr);
+												lr = Cr[Er];
+												Cr = A(833510 - 818789);
+												Cr = Ar[Cr];
+												Vr = { Cr(Ar, lr) };
+												Pr = V(l(Vr));
+												V = Pr();
+												Pr, lr = V, V;
+												Vr, V = Pr, Pr and -368520 + 2147505 or -898894 + 4642940;
+											else
+												M, B = z(k, M);
+												V = M and 30243 + 5875502 or 776704 + 12321110;
+											end;
+										end;
+									else
+										if V < 779492 + 14602987 then
+											if 14237535 - (-1016356) > V then
+												t, x = 12222817884666 - (-588865), A(971142 - 956471);
+												F = v[o[396632053 % 11017557]];
+												m = v[o[823495 - 823493]];
+												V, r = 12260958 - (-272234), A(139926290 % 11659309);
+												r = a[r];
+												c = m(x, t);
+												g = F[c];
+												r = r(a, g);
+												I = r;
+											elseif V < 15174456 - (-166177) then
+												r = -785167 - (-785318);
+												a = v[o[111744 - 111741]];
+												w = a * r;
+												r, a = 1989029381 % 15300226, -18630 - (-18887);
+												I = w % a;
+												v[o[-68458 - (-68461)]] = I;
+												a = v[o[242592 - 242589]];
+												w = a ~= r;
+												V = w and 9908342 - 349590 or 14642436 - (-678730);
+											elseif 15657538 - 293050 > V then
+												w, V, I = nil, P[A(573147 + -558443)], {};
+											else
+												V, S = K, q;
+												V = 11233247 - 483712;
+											end;
+										else
+											if V < 16247380 - 843642 then
+												V = J;
+												V, c = 80449 + 264315, t;
+											elseif 14888846 - (-523652) > V then
+												V = v[o[478807 + -478801]];
+												I = V();
+												a, V = I, w and 3892255750 % 19057483 or -1003249 + 11241389;
+											elseif 15737300 - 275875 > V then
+												t = v[o[455582711 % 7468569]];
+												f, N = -662002 + 11582788415235, A(2058061895 % 11562063);
+												J = v[o[466538 + -466535]];
+												b = J(N, f);
+												x = t[b];
+												m, V = x, 16362104 - 611531;
+											else
+												V, g = c, m;
+												V = 1410306 - 582302;
+											end;
+										end;
+									end;
+								end;
+							else
+								if V < 13090812 - (-305873) then
+									if V < 261907 + 12715783 then
+										if V < 441798944 % 26820270 then
+											if V > 64294245 % 17237264 then
+												if 12458461 - (-175077) > V then
+													c = 446664 + 14689805060592;
+													V = v[o[745790 + -745786]];
+													r = v[o[-177877 + 177879]];
+													m, I, x = A(294932 + -280217), A(956949450 % 11127147), -782746 + 22511282166412;
+													g = v[o[1939305539 % 11612608]];
+													F = g(m, c);
+													I = V[I];
+													a = r[F];
+													I = I(V, a);
+													V = v[o[-151864 + 151868]];
+													c = A(176321 - 161453);
+													g = v[o[369299 - 369297]];
+													a = I;
+													F = v[o[629240 + -629237]];
+													m = F(c, x);
+													r = g[m];
+													I = A(275531 - 260723);
+													I = V[I];
+													I = I(V, r);
+													r, V = I, a and 4235512240 % 26048602 or 544522 + 12390264;
+													I = a;
+												else
+													S, R = A(-608808 - (-623743)), A(-878213 - (-892984));
+													M = P[R];
+													q = 7527347972229 - (-664876);
+													B = v[a];
+													Q = v[r];
+													U = Q(S, q);
+													S = A(-856707 - (-871499));
+													R = B[U];
+													V = M[R];
+													q = 7059538758812 - 999365;
+													B = v[a];
+													Q = v[r];
+													U = Q(S, q);
+													S = 8867271151736 - (-294825);
+													R = B[U];
+													q = 30369565565532 - (-349409);
+													M = V(R);
+													R = v[a];
+													U = A(723608 - 708900);
+													B = v[r];
+													Q = B(U, S);
+													V = R[Q];
+													B = v[a];
+													S = A(-748809 - (-763757));
+													Q = v[r];
+													U = Q(S, q);
+													S = 173252 + 33440243390479;
+													R = B[U];
+													M[V] = R;
+													R = v[a];
+													B = v[r];
+													U = A(641402 - 626638);
+													Q = B(U, S);
+													V = R[Q];
+													U, S, R, q, K = A(402389529 % 13412492), 22579169460228 - 251634, 2650364851 % 26664945 < 1747014 - 771092, A(120894952 % 5756189), -604590 + 21780810228044;
+													M[V] = R;
+													R = v[a];
+													B = v[r];
+													Q = B(U, S);
+													V = R[Q];
+													R = k;
+													M[V] = R;
+													B = A(1642579217 % 16103573);
+													R = P[B];
+													Q = v[a];
+													U = v[r];
+													S = U(q, K);
+													h = -332007 + 32156561230693;
+													B = Q[S];
+													q, K = A(47642 + -32994), -305361 + 21101653528371;
+													V = R[B];
+													Q = v[a];
+													O = A(-806595 - (-821538));
+													U = v[r];
+													S = U(q, K);
+													B = Q[S];
+													R = V(B);
+													B = L();
+													q = A(370121762 % 14234878);
+													v[B] = R;
+													V = v[B];
+													Q = v[a];
+													U = v[r];
+													K, G = 998877 + 21874554612205, 818811 + 12238942525384;
+													S = U(q, K);
+													R = Q[S];
+													S = A(750574 - 735645);
+													U = P[S];
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													S = q[W];
+													q, K, G, p = 348400 + -348340, -368618 + 368618, 29523821341266 - 636062, 745823 + 12755606238676;
+													Q = U[S];
+													S, W = -332494 + 332494, -845565 + 845625;
+													U = Q(S, q, K, W);
+													V[R] = U;
+													K, O, q = 67511422571053 % 16877855712894, A(1856762874 % 9670562), A(1085933832 % 14875604);
+													V = v[B];
+													Q = v[a];
+													U = v[r];
+													S = U(q, K);
+													R = Q[S];
+													S = A(297124 + -282195);
+													U = P[S];
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													S = q[W];
+													K, W = 53379.5 - 53379, -149843 + 149783;
+													Q = U[S];
+													q, S = -452578 + 452548, 104314.5 - 104314;
+													U = Q(S, q, K, W);
+													K = 212447 + 11859803527091;
+													V[R] = U;
+													q = A(935253410 % 8502169);
+													V = v[B];
+													Q = v[a];
+													U = v[r];
+													S = U(q, K);
+													q = A(-491590 - (-506283));
+													R = Q[S];
+													Q, K = 832432699 % 8855667, -879997 + 32523632601253;
+													V[R] = Q;
+													V = v[B];
+													Q = v[a];
+													U = v[r];
+													S = U(q, K);
+													W = 34462605003936 - (-455183);
+													R = Q[S];
+													Q = M;
+													V[R] = Q;
+													Q = A(-970440 - (-985211));
+													R = P[Q];
+													U = v[a];
+													K = A(50741 - 36046);
+													S = v[r];
+													q = S(K, W);
+													Q = U[q];
+													V = R[Q];
+													U = v[a];
+													W, K = -986409 + 14351268800323, A(-270723 - (-285471));
+													S = v[r];
+													q = S(K, W);
+													G, W = A(-679697 - (-694522)), 7252163122858 - 805241;
+													Q = U[q];
+													R = V(Q);
+													Q = L();
+													v[Q] = R;
+													K = A(-162279 + 177114);
+													V = v[Q];
+													U = v[a];
+													S = v[r];
+													q = S(K, W);
+													R = U[q];
+													q = A(-506104 - (-521033));
+													S = P[q];
+													K = v[a];
+													W = v[r];
+													O = W(G, h);
+													q = K[O];
+													O = -830749 + 830749;
+													U = S[q];
+													q, W, K = .2, .2, -140212 - (-140212);
+													S = U(q, K, W, O);
+													K = A(-856091 + 870776);
+													V[R] = S;
+													G = A(779936 - 765271);
+													V = v[Q];
+													U = v[a];
+													W = -736490 + 2874939392548;
+													S = v[r];
+													h = 652555 + 13021483328164;
+													q = S(K, W);
+													R = U[q];
+													q = A(1521674747 % 10212482);
+													S = P[q];
+													K = v[a];
+													W = v[r];
+													O = W(G, h);
+													W, D = .4, A(470708 - 455735);
+													q = K[O];
+													U = S[q];
+													O, G, K, q = -968533 + 968533, A(645770 - 630844), 298238 + -298238, .4;
+													S = U(q, K, W, O);
+													V[R] = S;
+													K, W = A(-179773 + 194651), -607959 + 16285299254390;
+													V = v[Q];
+													U = v[a];
+													S = v[r];
+													q = S(K, W);
+													R = U[q];
+													q = A(-402431 - (-417212));
+													S = P[q];
+													K = v[a];
+													h = 517590 + 29867820552318;
+													W = v[r];
+													O = W(G, h);
+													q = K[O];
+													K, W = 235603339 % 2222673, 459228 - 459227;
+													U = S[q];
+													q = -661905 + 661906;
+													S = U(q, K, W);
+													V[R] = S;
+													K = A(970684 - 956131);
+													V = v[Q];
+													U = v[a];
+													S = v[r];
+													W = -463034 + 13666554407317;
+													q = S(K, W);
+													W = 26468585257119 - 985210;
+													R = U[q];
+													U, K = .6, A(2497573221 % 12183213);
+													V[R] = U;
+													V = v[Q];
+													U = v[a];
+													S = v[r];
+													q = S(K, W);
+													R = U[q];
+													U, W, G = 806082716 % 6347108, A(1190631406 % 6577993), A(661360 + -646772);
+													V[R] = U;
+													U = A(825807920 % 5856689);
+													R = P[U];
+													S = v[a];
+													O = 10577919444485 - 324296;
+													q = v[r];
+													K = q(W, O);
+													U = S[K];
+													V = R[U];
+													S = v[a];
+													W, O = A(-510749 - (-525646)), 9.9091836204631e+14 % 7741549790638;
+													q = v[r];
+													K = q(W, O);
+													U = S[K];
+													h = 79677 + 24360502392082;
+													R = V(U);
+													U = v[a];
+													W = 14444969524007 - 532705;
+													i = 21728294133268 - 947854;
+													S = v[r];
+													K = A(110851886 % 465703);
+													q = S(K, W);
+													V = U[q];
+													q = A(-197765 - (-212551));
+													S = P[q];
+													K = v[a];
+													W = v[r];
+													O = W(G, h);
+													q = K[O];
+													U = S[q];
+													K, q, O = 46663308 % 7777218, 1160492983 % 7298698, 17522659656092 - 25021;
+													S = U(q, K);
+													K = A(1120361852 % 5518952);
+													R[V] = S;
+													U = v[a];
+													W = 162057 + 13011782770338;
+													S = v[r];
+													q = S(K, W);
+													V = U[q];
+													W = A(-915686 + 930476);
+													U = v[Q];
+													R[V] = U;
+													V = v[Q];
+													S = v[a];
+													q = v[r];
+													K = q(W, O);
+													U = S[K];
+													S = v[B];
+													V[U] = S;
+													O, S = A(175045 - 160213), A(899173 - 884402);
+													U = P[S];
+													q = v[a];
+													K = v[r];
+													G = 3888335346559 - (-191379);
+													W = K(O, G);
+													S = q[W];
+													V = U[S];
+													q = v[a];
+													O, G = A(-731917 - (-746604)), -954967 + 20539132540851;
+													K = v[r];
+													W = K(O, G);
+													S = q[W];
+													U = V(S);
+													O = A(107750 + -92839);
+													S = L();
+													v[S] = U;
+													V = v[S];
+													q = v[a];
+													K = v[r];
+													G = 24582197930767 - 540249;
+													W = K(O, G);
+													U = q[W];
+													W = A(1033611 + -1018682);
+													K = P[W];
+													O = v[a];
+													G = v[r];
+													h = G(D, p);
+													W = O[h];
+													O = -485359 - (-485359);
+													q = K[W];
+													G, h, p, W = .06, -917003 + 917003, 22838068408362 - (-440672), .06;
+													K = q(W, O, G, h);
+													V[U] = K;
+													G = 15724324458736 - (-936874);
+													V = v[S];
+													D = A(-63382 - (-78264));
+													q = v[a];
+													K = v[r];
+													O = A(-209635 + 224251);
+													W = K(O, G);
+													U = q[W];
+													W = A(710367 + -695438);
+													K = P[W];
+													O = v[a];
+													G = v[r];
+													h = G(D, p);
+													W = O[h];
+													h, O, D = 813537648 % 9244746, 116315 - 116315, A(564108 - 549380);
+													q = K[W];
+													W, G = .47, .47;
+													K = q(W, O, G, h);
+													O = A(2046392314 % 12789861);
+													V[U] = K;
+													G = 18952225098137 % 150414567951;
+													V = v[S];
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													U = q[W];
+													p, W = -193375 + 2320763107223, A(1171001167 % 5471899);
+													K = P[W];
+													O = v[a];
+													G = v[r];
+													h = G(D, p);
+													W = O[h];
+													q = K[W];
+													G, W, O = -403040 - (-403041), 391505489 % 5151388, 580178 - 580177;
+													K = q(W, O, G);
+													p = 26419510773575 - 759609;
+													V[U] = K;
+													G, O = 8755349622607 - (-360606), A(415091529 % 2207854);
+													V = v[S];
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													D = A(1825820642 % 14490522);
+													U = q[W];
+													q, O = .1, A(-480181 + 494732);
+													V[U] = q;
+													V = v[S];
+													h, G = 14559705677654 - (-596773), 175366 + 22024959539978;
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													U = q[W];
+													G, q = A(23980212 % 158712), -1004116 - (-1004116);
+													V[U] = q;
+													q = A(881901 + -867130);
+													U = P[q];
+													K = v[a];
+													W = v[r];
+													O = W(G, h);
+													q = K[O];
+													V = U[q];
+													K = v[a];
+													G = A(-923873 + 938701);
+													W = v[r];
+													h = 25633204736044 - (-679540);
+													O = W(G, h);
+													q = K[O];
+													U = V(q);
+													q = v[a];
+													G, O = 16364409303268 - 987936, A(-540007 - (-554983));
+													K = v[r];
+													W = K(O, G);
+													V = q[W];
+													W = A(1094199542 % 4307814);
+													K = P[W];
+													O = v[a];
+													G = v[r];
+													h = G(D, p);
+													W = O[h];
+													q = K[W];
+													O, W, G = -227017 + 227017, 813234 % 813233, 22972465180542 - 148917;
+													K = q(W, O);
+													U[V] = K;
+													h, O = 15642640664678 - (-1004558), A(760518 - 745782);
+													q = v[a];
+													K = v[r];
+													W = K(O, G);
+													V = q[W];
+													q = v[S];
+													U[V] = q;
+													G, p = A(251451 + -236615), 773660 + 5586404949005;
+													V = v[S];
+													K = v[a];
+													W = v[r];
+													O = W(G, h);
+													q = K[O];
+													K = v[B];
+													V[q] = K;
+													V = 746368 + -746368;
+													q = L();
+													v[q] = V;
+													K = v[m];
+													D = A(360714 + -345859);
+													O = v[a];
+													G = v[r];
+													h = G(D, p);
+													W = O[h];
+													V = K[W];
+													K, p = A(-834727 - (-849292)), A(719521 + -704912);
+													W = Y(4461662 - (-1030028), {
+															q,
+															m,
+															a,
+															r,
+															S,
+														});
+													K = V[K];
+													K = K(V, W);
+													V = 5618374112 % 28595920 <= 3404704 - 75958;
+													K = L();
+													v[K] = V;
+													W = v[m];
+													G = v[a];
+													h = v[r];
+													D = h(p, i);
+													O = G[D];
+													V = W[O];
+													O = e(2555527532 % 18448207, {
+															B,
+															a,
+															r,
+															f,
+															N,
+															F,
+															K,
+															Q,
+															S,
+														});
+													p, W, i = A(2722758353 % 10719463), A(114736 - 100171), -851844 + 19297763549854;
+													W = V[W];
+													W = W(V, O);
+													V = v[J];
+													G = v[a];
+													W = A(-856561 + 871369);
+													h = v[r];
+													D = h(p, i);
+													W = V[W];
+													O = G[D];
+													W = W(V, O);
+													V = W and 3278802757 % 13813920 or 668797 + 14473674;
+												end;
+											else
+												if -928645 + 13417104 > V then
+													V, I = P[A(-106155 - (-121031))], {};
+												elseif V < 5134056285 % 21429059 then
+													r = A(-158316 + 173119);
+													I = P[r];
+													x, a = -435618 + 34205653214170, nil;
+													g = v[o[585499 + -585498]];
+													F = v[o[2512465806 % 10296991]];
+													c = A(958495439 % 8054461);
+													m = F(c, x);
+													r = g[m];
+													V = I[r];
+													r = 688113.5 - 688113;
+													g = v[o[2434819084 % 11762411]];
+													I = V(r, g);
+													V = -589564 + 12670847;
+												else
+													r = I;
+													V = r and 837484 + 5383504 or 204129 + -85836;
+												end;
+											end;
+										else
+											if 12069581 - (-717556) > V then
+												V, I = P[A(1487669341 % 9126716)], {};
+											elseif V < 3367669238 % 20837091 then
+												b = A(-955405 + 970186);
+												J = P[b];
+												s = A(434153 + -419465);
+												N = v[o[215047852 % 8601914]];
+												V, z = 4184027 - (-267870), 701336 + 3356454277762;
+												f = v[o[199413 + -199410]];
+												n = f(s, z);
+												f = 1456801384 % 15664531;
+												b = N[n];
+												t = J[b];
+												N, b = 1148718781 % 10442898, -610043 + 610044;
+												J = t(b, N, f);
+												c = J;
+											elseif 276517 + 12664263 > V then
+												V = I and -917584 + 8319002 or -1033241 + 16993866;
+											else
+												V, r = 4972685509 % 27253826, nil;
+											end;
+										end;
+									else
+										if 13939595 - 796121 > V then
+											if -678677 + 13778833 > V then
+												if V < 2766705789 % 26477469 then
+													V, I = P[A(-655877 + 670867)], {};
+												elseif 5663509362 % 28976491 > V then
+													I, m = A(1176216117 % 4594537), a;
+													c = Y(2319275718 % 24758920, { w });
+													V = P[I];
+													N = 993926688537 - (-21173);
+													I = V(c);
+													c, n, f = A(422718 + -407915), 28366946760931 - 755018, A(1164774421 % 16177219);
+													I = P[c];
+													x = v[o[-189271 - (-189273)]];
+													b = A(752485 + -737566);
+													t = v[o[632283 + -632280]];
+													J = t(b, N);
+													c = x[J];
+													V = I[c];
+													x = v[o[790543 + -790542]];
+													J = v[o[1966100068 % 9685222]];
+													b = v[o[111311 - 111308]];
+													N = b(f, n);
+													t = J[N];
+													c = x[t];
+													I = V(c);
+													V, m = -32516 + 2404029, nil;
+												else
+													U, k = 820012 + 27939541970854, A(-452529 + 467300);
+													z = P[k];
+													Q = A(-281769 - (-296734));
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													Q, U = A(467730323 % 6407065), 21216579825260 - 952277;
+													V = z[k];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													z = V(k);
+													Q = 31040791345813 - 295455;
+													k = v[a];
+													B = A(3564476484 % 14548823);
+													M = v[r];
+													R = M(B, Q);
+													V = k[R];
+													k = v[c];
+													z[V] = k;
+													k = v[a];
+													B, Q = A(516658 - 501863), 653465 + 21619153759930;
+													M = v[r];
+													R = M(B, Q);
+													V = k[R];
+													M = v[a];
+													R = v[r];
+													U, Q = 3284840090856 - 640751, A(456029318 % 3800122);
+													B = R(Q, U);
+													k = M[B];
+													z[V] = k;
+													k = v[a];
+													B = A(-230483 - (-245057));
+													M = v[r];
+													Q = 30060120492211 - 86534;
+													R = M(B, Q);
+													U = 790220 + 26054547071128;
+													V = k[R];
+													M = v[a];
+													R = v[r];
+													Q = A(292416628 % 3014454);
+													B = R(Q, U);
+													k = M[B];
+													U, Q = -619852 + 28614287452504, 24085960232729 - 369482;
+													z[V] = k;
+													k = v[a];
+													B = A(-855166 - (-869971));
+													M = v[r];
+													R = M(B, Q);
+													Q = A(1026687 - 1011978);
+													V = k[R];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													z[V] = k;
+													U = 33072485270491 - (-14413);
+													k = v[a];
+													M = v[r];
+													B, Q = A(724681 - 709926), -240629 + 12977471423376;
+													R = M(B, Q);
+													V = k[R];
+													S = 26380705366916 - (-420984);
+													M = v[a];
+													Q = A(397243555 % 6732695);
+													R = v[r];
+													B = R(Q, U);
+													U = 1040349 + 15101304880027;
+													k = M[B];
+													z[V] = k;
+													k = v[a];
+													B = A(34441813 % 5737824);
+													M = v[r];
+													Q = 998765 + 11195258590960;
+													R = M(B, Q);
+													V = k[R];
+													M = v[a];
+													Q = A(310292 + -295461);
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													U = 2257104054052 - (-285943);
+													z[V] = k;
+													k = v[a];
+													B, Q = A(-38984 + 53879), 817809 + 929621018399;
+													M = v[r];
+													R = M(B, Q);
+													V = k[R];
+													Q = A(324595 + -309834);
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													z[V] = k;
+													Q, B = 3981846092436 - (-1027242), A(1899985459 % 10734298);
+													k = v[a];
+													M = v[r];
+													R = M(B, Q);
+													V = k[R];
+													k = 281767908 % 1718097;
+													z[V] = k;
+													B = A(1438762181 % 12510846);
+													k = v[a];
+													Q = 29339438894646 - 530648;
+													M = v[r];
+													R = M(B, Q);
+													U, Q = 3.8831773068526e+14 % 22842219588988, A(-537934 - (-552538));
+													V = k[R];
+													k = -264370 + 264388;
+													z[V] = k;
+													V = v[c];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													U = A(42243 - 27613);
+													k = M[B];
+													R = v[a];
+													B = v[r];
+													Q = B(U, S);
+													M = R[Q];
+													U, Q = 912692 + 13711896849341, A(-154503 - (-169303));
+													V[k] = M;
+													V = v[c];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													U = -554768 + 26595616368496;
+													k = M[B];
+													Q, M = A(564789030 % 13447001), 12417315.5 % 100139.5;
+													V[k] = M;
+													V = v[c];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													U, S, M = 22845782197004 - 432510, 34805231980851 - (-503324), 1.2;
+													V[k] = M;
+													V = v[c];
+													M = v[a];
+													Q = A(265538877 % 10620971);
+													R = v[r];
+													B = R(Q, U);
+													U = A(254362740 % 2137378);
+													k = M[B];
+													M = 1398700819 % 6054549;
+													V[k] = M;
+													k = A(802774 - 788129);
+													M = y(2697435162 % 18811744, {
+															x,
+															a,
+															r,
+															s,
+														});
+													V = P[k];
+													k = V(M);
+													V = v[N];
+													R = v[a];
+													k = A(2203328614 % 9792505);
+													B = v[r];
+													Q = B(U, S);
+													M = R[Q];
+													k = V[k];
+													k = k(V, M);
+													M, U = A(946422 + -931796), A(713168 + -698592);
+													V = P[M];
+													U = k[U];
+													Q = { U(k) };
+													U = { V(l(Q)) };
+													R, V, M, B = U[1076726381 % 8753873], 63175 + 6578326, U[552583 - 552582], U[-653444 + 653447];
+												end;
+											else
+												if V < 12843719 - (-277202) then
+													z = N;
+													V = z;
+													g[z] = V;
+													z, V = nil, 7668765 - 966153;
+												else
+													Q = B;
+													V = L();
+													D, K = A(-268685 + 283382), A(-258184 - (-273047));
+													v[V] = U;
+													U = V;
+													q = v[U];
+													K = q[K];
+													O = v[a];
+													G = v[r];
+													p = 807421 + 15645775465080;
+													h = G(D, p);
+													W = O[h];
+													K = K(q, W);
+													V, S = K and 3947998694 % 26424491 or -57843 + 16099205, K;
+												end;
+											end;
+										else
+											if V < 2084794821 % 19729802 then
+												m = v[o[165734888 % 9749111]];
+												c = v[o[282244598 % 1325092]];
+												t, J = A(-696151 - (-711066)), 816666 + 28863982911078;
+												x = c(t, J);
+												V = m[x];
+												m = 1290689134 % 23609718 < 2010392 - (-784840);
+												F[V] = m;
+												V = 499850 + 5022053;
+											elseif 12835107 - (-400628) > V then
+												c = v[o[-584788 - (-584795)]];
+												I = m ~= c;
+												V = I and 311528779 % 4738860 or 1018417 + 6793171;
+											elseif V < 3626917277 % 29864296 then
+												N = A(-41080 + 55914);
+												t = v[o[-748917 - (-748919)]];
+												J = v[o[-402859 + 402862]];
+												f = 31961154291119 - (-717940);
+												b = J(N, f);
+												V = t[b];
+												J = v[o[1161060744 % 6276004]];
+												N = v[o[-395385 + 395387]];
+												f = v[o[500285 - 500282]];
+												s, z = A(2152912363 % 15377840), 17707385567998 - 269001;
+												n = f(s, z);
+												b = N[n];
+												t = J[b];
+												x[V] = t;
+												V = 2621870 - (-780112);
+											else
+												O, V = nil, -823050 + 15965521;
+											end;
+										end;
+									end;
+								else
+									if V < 3214754333 % 19635421 then
+										if V < 14447902 - 656932 then
+											if 3697458384 % 24559634 > V then
+												if V < 13640671 - 206800 then
+													m = 13722711602593 - (-877397);
+													I = v[o[2076680269 % 12585941]];
+													a = v[o[1048373 - 1048371]];
+													r = v[o[456219475 % 12330256]];
+													F = A(563304 - 548531);
+													g = r(F, m);
+													w = a[g];
+													a, m = A(-991450 + 1006410), A(325245617 % 9292306);
+													V = I[w];
+													c, t, w = -874674 + 29469832695372, 34629310789607 - 506090, V;
+													I = P[a];
+													r = v[o[-617371 + 617373]];
+													g = v[o[721250 - 721247]];
+													x, J = A(111177758 % 889303), A(-35864 + 50623);
+													F = g(m, c);
+													a = r[F];
+													b = 418027 + 2898842428506;
+													V = I[a];
+													F = v[o[309492 - 309490]];
+													m = v[o[-109520 + 109523]];
+													c = m(x, t);
+													g = F[c];
+													r = w[g];
+													g = 969144 - 969142;
+													a = r / g;
+													c = v[o[827536016 % 3405498]];
+													x = v[o[-63020 - (-63023)]];
+													t = x(J, b);
+													m = c[t];
+													t = 7297243080947 - 416685;
+													F = w[m];
+													m = 629124785 % 5771787;
+													g = F / m;
+													F, x = 47569845 % 352369, A(379472 + -364599);
+													r = g - F;
+													I = V(a, r);
+													a, J = I, -257897 + 16967598067270;
+													V = v[o[1585221728 % 8171246]];
+													I = A(-516271 + 531243);
+													F = v[o[64429 - 64427]];
+													m = v[o[316307763 % 10543592]];
+													I = V[I];
+													c = m(x, t);
+													g = F[c];
+													t = A(-197034 - (-211980));
+													r = a[g];
+													m = v[o[276265 - 276263]];
+													c = v[o[226261083 % 12570060]];
+													x = c(t, J);
+													F = m[x];
+													g = a[F];
+													x = A(-41007 + 55745);
+													I = I(V, r, g);
+													r, g, J = I, A(-497410 + 512130), 27836374412753 - 162607;
+													I = P[g];
+													t = 847161 + 6787177537311;
+													F = v[o[34645 + -34643]];
+													m = v[o[-1034327 + 1034330]];
+													c = m(x, t);
+													t = A(1594078755 % 9545293);
+													g = F[c];
+													V = I[g];
+													I = V();
+													g = I;
+													I = v[o[774929 + -774924]];
+													m = v[o[-82786 - (-82788)]];
+													c = v[o[64451 - 64448]];
+													x = c(t, J);
+													F = m[x];
+													V = I[F];
+													V = V and 11087661 - 956635 or 973787 + 1101463;
+												elseif 698503692 % 29783553 > V then
+													I = v[o[579813 - 579802]];
+													N = 9976285559570 - (-546579);
+													x = v[o[152421 + -152418]];
+													b = A(240198 - 225643);
+													t = v[o[-221539 - (-221543)]];
+													J = t(b, N);
+													c = x[J];
+													V = I[c];
+													I = A(1922622525 % 14789292);
+													c = T(2694111 - (-805472), {
+															o[-649545 + 649557],
+															o[-850862 - (-850865)],
+															o[2812743859 % 15370185],
+															o[480893 - 480888],
+														});
+													I = V[I];
+													I = I(V, c);
+													v[o[1365892910 % 13658929]] = I;
+													V = v[o[324062741 % 14730124]];
+													V = V and 3791523110 % 25725383 or 8219622 - 427641;
+												else
+													V = A(3207246588 % 14779871);
+													V = w[V];
+													V = V(w);
+													V = 290936 + 12340779;
+												end;
+											else
+												if 639146 + 12990768 > V then
+													I, w, F, V = nil, C, A(448403 + -433536), nil;
+													a = L();
+													J = L();
+													v[a] = V;
+													r = L();
+													N = -797258 - (-797514);
+													v[r] = I;
+													I = P[F];
+													F, m, V = A(1575395265 % 15147889), A(-392536 - (-407301)), {};
+													g = V;
+													V = I[F];
+													F = L();
+													v[F] = V;
+													t = L();
+													b = A(757884 + -743017);
+													I = P[m];
+													c, f, m = A(79818561 % 3069382), N, A(950581 - 935742);
+													V = I[m];
+													I = P[c];
+													m, N = V, -951271 - (-951272);
+													x = L();
+													n, c = N, A(-668328 + 683251);
+													V = I[c];
+													c = V;
+													V = 274846 + -274844;
+													v[x] = V;
+													V = {};
+													v[t] = V;
+													V = -626149 - (-626149);
+													v[J] = V;
+													I = P[b];
+													N, b = -708260 + 708260, A(3259490671 % 15746260);
+													s = N > n;
+													V = I[b];
+													b, I = V, -210484 + 210485;
+													V, N = -396386 + 7098998, I - n;
+												else
+													V = 1408235269 % 7455286;
+													U = d(U);
+													Q = nil;
+												end;
+											end;
+										else
+											if V < 13276 + 13845454 then
+												V, t, g = 2305997061 % 17088902 > 1277352 - 959138, 32593324053500 - 694451, 196542476 % 10488749 >= 590767 - 412951;
+												v[o[684697 - 684693]] = V;
+												x, V = A(64898 + -49958), 662821421 % 4584999;
+												I = v[o[1652111405 % 6715900]];
+												r = I(g);
+												g = A(912941 - 898138);
+												r = P[g];
+												F = v[o[-97288 + 97289]];
+												m = v[o[546670168 % 11156534]];
+												c = m(x, t);
+												g = F[c];
+												I = r[g];
+												F = T(-565198 - (-832437), { o[1379033479 % 7454235] });
+												g = .3;
+												r = I(g, F);
+											elseif 4585335147 % 20499369 > V then
+												m = 48622570896023 % 16207528898190;
+												V = v[o[1459576909 % 13514601]];
+												F = A(-481393 + 496054);
+												a = v[o[1007161 - 1007159]];
+												r = v[o[269248356 % 1136069]];
+												g = r(F, m);
+												w = a[g];
+												a, I = 1589310760 % 15735750, A(820391481 % 15776471);
+												I = V[I];
+												I = I(V, w, a);
+												w = I;
+												V = v[o[601768 + -601767]];
+												r = v[o[-591268 - (-591270)]];
+												m = A(-600360 + 614924);
+												g = v[o[812246751 % 11771692]];
+												c = 809586 + 18262151890629;
+												F = g(m, c);
+												a = r[F];
+												I, r = A(2893791463 % 11763319), 234655 - 234645;
+												I = V[I];
+												I = I(V, a, r);
+												a = I;
+												I, V = { w, a }, P[A(685100162 % 7446579)];
+											elseif -995496 + 15125817 > V then
+												J = A(792974013 % 10433673);
+												c = v[o[-217833 + 217835]];
+												b = 25256796661137 - (-67680);
+												x = v[o[-1006464 - (-1006467)]];
+												N = 28407676154299 - 900623;
+												t = x(J, b);
+												I = c[t];
+												V = F[I];
+												b = A(92377 - 77709);
+												x = v[o[808970 + -808968]];
+												I = A(411053 + -396091);
+												t = v[o[-478167 - (-478170)]];
+												I = V[I];
+												J = t(b, N);
+												c = x[J];
+												I = I(V, c);
+												c = I;
+												V = c and 1118602370 % 23108070 or 8037922 - (-309673);
+											else
+												m, g, c, t = nil, nil, nil, x;
+												r[a] = t;
+												x, V = nil, 8431978 - (-728962);
+											end;
+										end;
+									else
+										if -50625 + 14443921 > V then
+											if V < 4672178056 % 24260189 then
+												z = -600239 + 16491935237806;
+												N = v[o[249512078 % 1260162]];
+												V, s = 898106 + 9570263, A(2609882176 % 16518147);
+												f = v[o[-638703 - (-638706)]];
+												n = f(s, z);
+												b = N[n];
+												J = x[b];
+												b = 3089665425 % 16522275;
+												t = J > b;
+												I = t;
+											elseif V < 13831707 - (-449052) then
+												I = v[o[566306001 % 2265224]];
+												w = 204605 - 204604;
+												V = I + w;
+												v[o[-642650 + 642651]] = V;
+												w = A(-392881 - (-407616));
+												I = P[w];
+												w = I();
+												r = v[o[-589003 - (-589005)]];
+												a = w - r;
+												r = 469186.5 - 469186;
+												I = a >= r;
+												V = I and 3134954208 % 17383199 or 562927372 % 3609698;
+											elseif V < 15113773 - 794108 then
+												I, V = {}, P[A(187721 - 172768)];
+											else
+												V, h = i, p;
+												V = 11107244 - (-310190);
+											end;
+										else
+											if 6420385172 % 30216630 > V then
+												V = t and 3345496883 % 21779144 or 1246514292 % 7534014;
+											elseif V < 123488 + 14384651 then
+												R, V, B = nil, -354281 + 15498386, nil;
+											elseif V < 3865759867 % 18338859 then
+												V = 342383 + 15017718;
+											else
+												V = nil;
+												I = { V };
+												V = P[A(3643434487 % 15055453)];
+											end;
+										end;
+									end;
+								end;
+							end;
+						end;
+					else
+						if V > 4327929 - 562762 then
+							if -79188 + 5655323 > V then
+								if V > 3995158 - (-640546) then
+									if V > 3840621566 % 20957438 then
+										if V < -909308 + 6401821 then
+											if 253216 + 5193732 > V then
+												w = C[296284 + -296283];
+												I = v[o[30230 + -30229]];
+												m = A(1846789972 % 7213965);
+												r = v[o[-164308 - (-164310)]];
+												c = 16226684656228 - (-836384);
+												g = v[o[-824583 - (-824586)]];
+												F = g(m, c);
+												a = r[F];
+												V = I[a];
+												V = V and -540789 + 2134562 or 15509320 - 97926;
+											elseif 3774822072 % 18387076 > V then
+												V, I = -139274 + 3038236, g;
+											elseif V < 5522410 - 33919 then
+												F, m, w = A(-549336 - (-563998)), 692961 + 32219104765882, I;
+												a = v[o[665968479 % 15487639]];
+												r = v[o[-176257 + 176260]];
+												g = r(F, m);
+												V, m = A(1225104774 % 14412821), 19175741766825 - (-91704);
+												V = w[V];
+												I = a[g];
+												a, F = -415666 + 415671, A(2775701899 % 11147337);
+												V = V(w, I, a);
+												a = v[o[-971063 + 971065]];
+												r = v[o[37386187 % 3398744]];
+												g = r(F, m);
+												I = a[g];
+												a, V = 818439 - 818434, A(3040058632 % 16084887);
+												V = w[V];
+												V = V(w, I, a);
+												a = V;
+												V, I = P[A(851904 - 837088)], { w, a };
+											else
+												t, J, a = A(152467 + -137679), 30224628174774 - 809148, 671148 + -671146.5;
+												I = v[o[409345930 % 6710589]];
+												g = v[o[287827 - 287825]];
+												m = v[o[711518 - 711515]];
+												c = v[o[-672620 - (-672624)]];
+												x = c(t, J);
+												b = -870076 + 12614831332782;
+												F = m[x];
+												r = g[F];
+												g = A(133961037 % 4320849);
+												g = r[g];
+												g = g(r);
+												w = a * g;
+												m = A(-763210 + 778077);
+												V = I + w;
+												v[o[451381 - 451380]] = V;
+												J, w, r = A(764516895 % 9323198), .06, .012;
+												F = P[m];
+												c = v[o[625133 - 625130]];
+												x = v[o[505970 - 505966]];
+												t = x(J, b);
+												m = c[t];
+												g = F[m];
+												m = v[o[147826 - 147825]];
+												F = g(m);
+												a = r * F;
+												m = A(-647517 + 662328);
+												I = w + a;
+												c, w = 8461343662122 - (-716602), I;
+												I = v[o[-987343 + 987348]];
+												t = A(1059124 - 1044200);
+												r = v[o[1368174896 % 8393711]];
+												g = v[o[73740 + -73736]];
+												F = g(m, c);
+												a = r[F];
+												F = A(-568239 + 583168);
+												g = P[F];
+												m = v[o[-685354 + 685357]];
+												c = v[o[191013 - 191009]];
+												J = -494060 + 8061739735190;
+												x = c(t, J);
+												F = m[x];
+												r = g[F];
+												F, c, m = 280939150 % 1518590, 671395 + 28900128437742, 2108792655 % 9900435;
+												g = r(w, F, w, m);
+												t = A(1038961773 % 5708499);
+												I[a] = g;
+												V = P[A(425475 - 410913)];
+												I = v[o[519758213 % 3208384]];
+												r = v[o[1167608955 % 10811194]];
+												m = A(4062690114 % 16718829);
+												g = v[o[901671 + -901667]];
+												F = g(m, c);
+												J = -405682 + 3144793749098;
+												a = r[F];
+												F = A(123188 - 108259);
+												g = P[F];
+												m = v[o[-900406 - (-900409)]];
+												c = v[o[43891 - 43887]];
+												x = c(t, J);
+												F = m[x];
+												r = g[F];
+												x, m = 690522 - 690520, -796075 + 796075.5;
+												c = w / x;
+												F = m - c;
+												m, x, J = 24967 - 24967, 732603 + -732602.5, -660741 - (-660743);
+												t = w / J;
+												c = x - t;
+												x = -449785 + 449785;
+												g = r(F, m, c, x);
+												w = nil;
+												I[a] = g;
+												I = {};
+											end;
+										else
+											if V < -317351 + 5820236 then
+												w, I, V, a = nil, {}, P[A(901831 + -887140)], nil;
+											elseif 97751518 % 18446870 > V then
+												V = v[o[483216 + -483210]];
+												I = A(2355357594 % 9421372);
+												I = V[I];
+												I = I(V);
+												V = nil;
+												v[o[-1011240 - (-1011246)]] = V;
+												V = 4640008704 % 24762731;
+											elseif V < 6390194 - 851229 then
+												V, F, g = 3307083025 % 17081712, nil, nil;
+											else
+												R = v[o[904180 + -904179]];
+												S, U, z = 189646 + 9581924265119, A(-62246 + 77043), V;
+												B = v[o[-222564 + 222566]];
+												Q = B(U, S);
+												k = A(752897 - 738034);
+												M = R[Q];
+												k = F[k];
+												k = k(F, M);
+												s, V = k, k and 130983 + 1567484 or 567487 + 9372682;
+											end;
+										end;
+									else
+										if V < 4757059 - (-530365) then
+											if V < 2298144948 % 16264133 then
+												if 4943652 - 256876 > V then
+													V = v[o[182783257 % 15231938]];
+													a = { V() };
+													w, I = a[27762 - 27760], a[-41580 - (-41581)];
+													a = I;
+													V = not w;
+													V = V and 9713574 - 885501 or 8564445 - 894664;
+												elseif 814205 + 3989614 > V then
+													V = v[o[-104015 - (-104016)]];
+													r = v[o[46579 + -46577]];
+													c, b, m = 26396011473447 - (-624092), 2410088651351 % 19594319155, A(618831 + -603853);
+													g = v[o[354022 - 354019]];
+													F = g(m, c);
+													a = r[F];
+													t, J = -882748 + 15404748444737, A(385245 + -370462);
+													r = v[o[247151620 % 2873856]];
+													F = v[o[-632905 + 632907]];
+													m = v[o[1030621212 % 12417123]];
+													x = A(321419466 % 4068414);
+													c = m(x, t);
+													g = F[c];
+													F = v[o[246147 + -246142]];
+													c = v[o[57309287 % 1736645]];
+													x = v[o[-166796 - (-166799)]];
+													t = x(J, b);
+													m = c[t];
+													c = -748678 + 748682;
+													w = { [a] = r, [g] = F, [m] = c };
+													I = V(w);
+													I, V = {}, P[A(1092260404 % 7092505)];
+												else
+													V, I = P[A(667788 - 653227)], {};
+												end;
+											else
+												if V < 5981232 - 899145 then
+													G = v[a];
+													h = v[r];
+													i, p, V = 9687043132849 - 687123, A(-168424 + 183363), A(990305 + -975497);
+													V = W[V];
+													D = h(p, i);
+													O = G[D];
+													V = V(W, O);
+													O = V;
+													V = O and 69842 + 667295 or 5199192111 % 21607521;
+												else
+													m, c = A(-549555 - (-564376)), -347216 + 2123835084844;
+													r = v[o[806342 - 806340]];
+													g = v[o[77924 - 77921]];
+													F = g(m, c);
+													I = r[F];
+													V = a[I];
+													v[o[-945725 + 945729]] = V;
+													V = -1012563 + 2787333;
+												end;
+											end;
+										else
+											if V < 357345771 % 19557294 then
+												w, a = C[322262152 % 1862787], C[-837559 - (-837561)];
+												V = a and 2060228873 % 10896960 or 1419620188 % 12036820;
+											elseif 275209714 % 7937220 > V then
+												z = A(1896783285 % 14590527);
+												V = P[z];
+												k = v[a];
+												B = A(-586425 - (-601142));
+												M = v[r];
+												Q = 519459 + 8353878172175;
+												R = M(B, Q);
+												z = k[R];
+												M, q = A(256815 + -242121), 9162726890041 - 231823;
+												k = v[f];
+												M = k[M];
+												B = v[a];
+												S = A(1645706616 % 6453693);
+												Q = v[r];
+												U = Q(S, q);
+												R = B[U];
+												M = M(k, R);
+												B = A(877984 + -863191);
+												R = y(-211121 + 3696383, { f, a, r });
+												k = A(3964818093 % 15987111);
+												k = M[k];
+												k = k(M, R);
+												V[z] = k;
+												Q = 2870604179231 - 500199;
+												V = v[f];
+												k = v[a];
+												M = v[r];
+												R = M(B, Q);
+												z = k[R];
+												k = 380216 - 380096;
+												V[z] = k;
+												Q, z = A(343431 + -328724), A(525884834 % 2552768);
+												V = P[z];
+												R = v[c];
+												Q = R[Q];
+												B = { Q(R) };
+												R = { V(l(B)) };
+												k, M, V, z = R[334728710 % 1578909], R[1417136646 % 12112279], 14531653 - (-612452), R[624903 + -624902];
+											elseif V < 6260845 - 881585 then
+												V, t = b, J;
+												V = -7034 + 14453490;
+											else
+												b, I = -987016 + 8459662532331, A(-520279 - (-535105));
+												V = P[I];
+												c = v[o[-348501 + 348503]];
+												J = A(117470094 % 5872769);
+												x = v[o[814397088 % 10054285]];
+												t = x(J, b);
+												n, N, b = 3145860544744 - (-85200), 25596589173575 - (-410440), A(1714353751 % 9909474);
+												m = c[t];
+												s, f = 25619366268383 - 171846, 26022107117936 - (-13797);
+												x = v[o[-305828 + 305830]];
+												t = v[o[56472 - 56469]];
+												J = t(b, N);
+												c = x[J];
+												t = v[o[216895122 % 16684240]];
+												J = v[o[291167 - 291164]];
+												N = A(365915 + -351092);
+												b = J(N, f);
+												f = A(392423 + -377678);
+												x = t[b];
+												J = v[o[376191 - 376189]];
+												b = v[o[-800277 - (-800280)]];
+												N = b(f, n);
+												t = J[N];
+												b = v[o[-754694 + 754696]];
+												n = A(-1041871 + 1056546);
+												N = v[o[-229846 + 229849]];
+												f = N(n, s);
+												J = b[f];
+												F = {
+														m,
+														c,
+														x,
+														t,
+														J,
+													};
+												m = { V(F) };
+												r, g, V, I = m[69233 + -69231], m[559028227 % 4367408], -988034 + 4367565, m[830091 - 830090];
+												F = I;
+											end;
+										end;
+									end;
+								else
+									if 2282289760 % 12182223 > V then
+										if V > 1502918241 % 9670437 then
+											if V < 183667225 % 8980254 then
+												V = P[A(707241007 % 13867181)];
+												a = v[o[383917610 % 1691267]];
+												w = #a;
+												r = v[o[430052962 % 9150063]];
+												g = nil;
+												a = r[w];
+												I = { a };
+												r = v[o[3799174801 % 15829895]];
+												r[w] = g;
+											elseif V < 5131878 - 1039369 then
+												V = Pr;
+												V, p = 13720851 - (-619285), u;
+											elseif V < 44685 + 4102025 then
+												k, Q = A(585032 - 570257), A(443402 + -428601);
+												z = P[k];
+												U = 8114792364242 - (-169456);
+												M = v[a];
+												R = v[r];
+												B = R(Q, U);
+												k = M[B];
+												V = z[k];
+												z = A(245053970 % 5104987);
+												z = V[z];
+												z = z(V);
+												V = 2359271253 % 13150596;
+											else
+												V, I = P[A(438653 - 423964)], {};
+											end;
+										else
+											if -606550 + 4467265 > V then
+												if -657702 + 4449700 > V then
+													I = A(-373187 + 388013);
+													V = P[I];
+													b = 8068243711470 - (-993471);
+													c = v[o[-746985 + 746987]];
+													N, J = 5203748190809 - (-921374), A(-589229 - (-603870));
+													x = v[o[749822 + -749819]];
+													s = -1036073 + 29870572225918;
+													t = x(J, b);
+													m = c[t];
+													n = 999320 + 7977575304938;
+													x = v[o[226714 - 226712]];
+													b = A(651531 - 636744);
+													t = v[o[-617856 - (-617859)]];
+													J = t(b, N);
+													c = x[J];
+													t = v[o[-367598 + 367600]];
+													f = 880313 + 17251822088360;
+													J = v[o[101921928 % 970685]];
+													N = A(107383598 % 617061);
+													b = J(N, f);
+													x = t[b];
+													J = v[o[2006549561 % 13649997]];
+													f = A(825841 - 810962);
+													b = v[o[514038513 % 11423078]];
+													N = b(f, n);
+													t = J[N];
+													b = v[o[2426192183 % 16283169]];
+													n = A(597089 + -582242);
+													N = v[o[1219060659 % 6926481]];
+													f = N(n, s);
+													J = b[f];
+													F = {
+															m,
+															c,
+															x,
+															t,
+															J,
+														};
+													m = { V(F) };
+													V, r, g, I = 3755272 - 391694, m[-999189 + 999191], m[2993930285 % 12579539], m[125441181 % 6272059];
+													F = I;
+												elseif -204275 + 4023450 > V then
+													I, V = {}, P[A(964196417 % 6180653)];
+												else
+													n, R = A(-580555 - (-595200)), A(1716231042 % 9226970);
+													V = P[n];
+													z = Y(8479245 - (-338233), {
+															N,
+															a,
+															r,
+															t,
+														});
+													n = V(z);
+													n, Q, B = A(589256885 % 6137940), A(435149 - 420422), 95830 + 4435393352123;
+													V = P[n];
+													z = Y(1553589627 % 7255104, { a, r, c });
+													n = V(z);
+													n = A(-219177 + 234048);
+													V = P[n];
+													z = v[a];
+													k = v[r];
+													M = k(R, B);
+													k = 1488639056 % 10058372;
+													n = z[M];
+													M = 291935 + -291935;
+													z = k / M;
+													V[n] = z;
+													n = L();
+													V = nil;
+													v[n] = V;
+													z = v[m];
+													U = -123209 + 20801120536351;
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													V = z[k];
+													k = Y(2669573493 % 17887439, {
+															N,
+															a,
+															r,
+															n,
+														});
+													z = A(159261436 % 1338209);
+													z = V[z];
+													z = z(V, k);
+													Q, U, k = A(756306 - 741385), 156968 + 34231261944092, A(-51180 + 65955);
+													z = P[k];
+													M = v[a];
+													R = v[r];
+													B = R(Q, U);
+													k = M[B];
+													V = z[k];
+													V = V and 1808223998 % 16253402 or 988929 + 4325640;
+												end;
+											else
+												if 323047 + 3603752 > V then
+													n = v[o[941192 - 941190]];
+													s = v[o[-809083 - (-809086)]];
+													k, b, N = A(294323 + -279692), V, A(-89393 - (-104256));
+													N, M = x[N], 1845748212202 % 22787146246;
+													z = s(k, M);
+													f = n[z];
+													N = N(x, f);
+													V, J = N and 405169 + 4968731 or 14435579 - (-357338), N;
+												else
+													F = r;
+													x = v[o[245877 + -245876]];
+													t = v[o[533568496 % 2350522]];
+													b, N = A(1592013201 % 10684553), 606317 + 21980201789326;
+													J = t(b, N);
+													c = x[J];
+													V = A(426253 - 411390);
+													V = m[V];
+													V = V(m, c);
+													V = V and 396810 - (-474421) or -28336 + 7605422;
+												end;
+											end;
+										end;
+									else
+										if V < 5238254 - 839765 then
+											if 1607477608 % 11133193 > V then
+												if 4070729 - (-164446) > V then
+													g = v[o[241664008 % 6359579]];
+													f, J = -713148 + 24914798350093, 17575823937869 - 618837;
+													m = v[o[1368581373 % 9373845]];
+													t, V = A(514703 - 500095), 10378120 - 359821;
+													c = v[o[-669768 - (-669772)]];
+													x = c(t, J);
+													F = m[x];
+													x = A(758419 + -743638);
+													c = P[x];
+													N = A(307739995 % 14653575);
+													t = v[o[-46630 - (-46633)]];
+													J = v[o[84359751 % 362059]];
+													b = J(N, f);
+													J = 1214259072 % 12648532;
+													x = t[b];
+													m = c[x];
+													t, x = -584363 + 584363, 1168793925 % 6566258;
+													c = m(x, t, J);
+													g[F] = c;
+												elseif 4631912 - 369800 > V then
+													m = 17252633313079 - 647126;
+													V = v[o[290419188 % 3978345]];
+													a = v[o[577966766 % 6799609]];
+													r = v[o[-806913 - (-806915)]];
+													F = A(75596732 % 2159482);
+													g = r(F, m);
+													w = a[g];
+													a = 560543985 % 5652934 >= -697245 + 5739785;
+													V[w] = a;
+													m = 34203700604476 - (-856059);
+													V = v[o[186316473 % 4903065]];
+													I = {};
+													a = v[o[584064947 % 5358394]];
+													F = A(703615 + -688891);
+													r = v[o[-201102 + 201104]];
+													g = r(F, m);
+													w = a[g];
+													a = 503179930 % 3726518;
+													V[w] = a;
+													V = P[A(2142223490 % 10399072)];
+												else
+													Ar = v[a];
+													Cr, u, Xr = A(1302881091 % 14317211), A(542640 + -527681), -738513 + 645070702077;
+													Vr = v[r];
+													i = V;
+													lr = Vr(Cr, Xr);
+													Pr = Ar[lr];
+													u = S[u];
+													u = u(S, Pr);
+													p, V = u, u and 4363581760 % 26519766 or -250608 + 12604642;
+												end;
+											else
+												if 878260 + 3449622 > V then
+													n, t = A(287706 + -273008), A(191237 + -176630);
+													x = P[t];
+													s = 30477864038339 - 489555;
+													b = v[o[862275 - 862273]];
+													N = v[o[1015170 - 1015167]];
+													f = N(n, s);
+													J = b[f];
+													t = x(m, J);
+													c, V = t, 7201125 - (-620541);
+												else
+													F = A(1054666 - 1039896);
+													I = v[o[-350515 - (-350516)]];
+													a = v[o[876025 - 876023]];
+													m = 33738537644233 - (-887957);
+													r = v[o[936936 - 936933]];
+													g = r(F, m);
+													w = a[g];
+													V = I[w];
+													w = V;
+													I, V = w, w and 944526 + 326085 or 555514602 % 4017997;
+												end;
+											end;
+										else
+											if V < 5436743 - 946186 then
+												V, n = x, 22078341094763 - 734530;
+												x = v[o[-868862 - (-868870)]];
+												J = v[o[758036210 % 3081448]];
+												f = A(1558146380 % 6774486);
+												b = v[o[374966439 % 4807262]];
+												N = b(f, n);
+												t = J[N];
+												J, n = c, 657564 + 11236022799316;
+												x[t] = J;
+												f = A(1165370317 % 13710064);
+												x = v[o[-494131 - (-494139)]];
+												J = v[o[-431863 - (-431865)]];
+												b = v[o[997802 + -997799]];
+												N = b(f, n);
+												t = J[N];
+												f, b, n = V, V, .4;
+												N, f = m and n, .6;
+												n, J = 15971285557986 - 116181, N or f;
+												f = A(16509280 % 4123672);
+												x[t] = J;
+												x = v[o[-259157 + 259166]];
+												J = v[o[822001805 % 16775547]];
+												b = v[o[1608926781 % 16586874]];
+												N = b(f, n);
+												n = 30539685164265 - 408924;
+												t = J[N];
+												J = c;
+												x[t] = J;
+												x = v[o[-677672 + 677681]];
+												J = v[o[2921283730 % 16598203]];
+												b = v[o[-704259 - (-704262)]];
+												f = A(1776216241 % 16001814);
+												N = b(f, n);
+												b = V;
+												t = J[N];
+												c, f = nil, V;
+												V, f, n = -799247 + 8610835, .1, 160106 - 160106;
+												N = m and n;
+												J = N or f;
+												x[t] = J;
+											elseif 4587275 - 54347 > V then
+												x, c = -921686 + 6638903893097, A(1019324896 % 9351471);
+												V = v[o[-516554 - (-516559)]];
+												g = v[o[524522 - 524520]];
+												F = v[o[-998793 + 998796]];
+												m = F(c, x);
+												c, F = V, V;
+												V = a and 463096808 % 23562274 or 15532713 - (-217860);
+												r = g[m];
+												m = a;
+											elseif 541299 + 4029432 > V then
+												w, c, m, F = A(-958262 + 973065), 617004 + 26478702888446, 33871919058031 - 478931, A(-842253 - (-857094));
+												I = P[w];
+												a = v[o[-759433 - (-759434)]];
+												r = v[o[-817197 - (-817199)]];
+												g = r(F, m);
+												m = A(143981 + -129007);
+												w = a[g];
+												V = I[w];
+												w = 1750993756 % 16676131;
+												I = V(w);
+												w = v[o[192923928 % 2442075]];
+												r = v[o[859350 + -859349]];
+												g = v[o[2898954428 % 16756962]];
+												F = g(m, c);
+												a = r[F];
+												I = w[a];
+												V = not I;
+												V = V and 6458340 - (-494367) or 2679468205 % 21152135;
+											else
+												n = v[N];
+												Q, B = -406567 + 33518317875487, A(-783769 - (-798553));
+												k = v[a];
+												M = v[r];
+												R = M(B, Q);
+												z = k[R];
+												V = n[z];
+												n = A(84591704 % 6505922);
+												n = V[n];
+												n = n(V);
+												V = 466902 + 3366294;
+											end;
+										end;
+									end;
+								end;
+							else
+								if V < -221358 + 7242381 then
+									if 5188714 - (-939577) > V then
+										if V > 6829100 - 996526 then
+											if 732454286 % 6726965 > V then
+												R, V = M, A(8638863 % 56000);
+												V, K, W = B[V], A(-70769 + 85691), 381419 + 29451498152871;
+												U = v[a];
+												S = v[r];
+												q = S(K, W);
+												Q = U[q];
+												V = V(B, Q);
+												V = V and 2319491692 % 18053829 or 2638906755 % 16100822;
+											elseif V < 5228594 - (-758475) then
+												J, r, c = -307700 + 32496647892240, A(847592 - 832725), A(690903 + -676317);
+												a = P[r];
+												x = 20532499332126 - (-600379);
+												g = v[o[-359005 + 359008]];
+												F = v[o[50516 - 50512]];
+												m = F(c, x);
+												r = g[m];
+												I = a[r];
+												g = v[o[599600 + -599599]];
+												m = v[o[937684 - 937682]];
+												F = w - m;
+												r = g / F;
+												a = I(r);
+												I, r = 50247 + -50247, w;
+												v[o[965918 - 965913]] = a;
+												t = A(375137926 % 6946728);
+												v[o[391963 - 391962]] = I;
+												v[o[504733152 % 10094663]] = r;
+												g = v[o[1362862064 % 16620269]];
+												m = v[o[223055 - 223052]];
+												c = v[o[205040711 % 1475113]];
+												x = c(t, J);
+												c = A(70407656 % 14078617);
+												F = m[x];
+												m = P[c];
+												x = v[o[154801 + -154796]];
+												c = m(x);
+												g[F] = c;
+												m = 83545 - 83485;
+												F = v[o[902709 + -902704]];
+												g = F >= m;
+												V = g and 334641 + 11864735 or 4143681 - 601205;
+											elseif V < 1538157361 % 6632648 then
+												Ar, V = lr, Cr;
+												V = 15270664 - (-489038);
+											else
+												c, x, m = -378337 + 20745053105053, -192095 + 23410199501044, A(60821 + -46182);
+												V = v[o[413960 + -413955]];
+												r = v[o[-87987 + 87989]];
+												g = v[o[2480503152 % 11983107]];
+												F = g(m, c);
+												a = r[F];
+												c = A(-87268 + 102012);
+												g = v[o[525198494 % 9725898]];
+												F = v[o[2981726883 % 12423862]];
+												m = F(c, x);
+												r = g[m];
+												I = V(a, r);
+												V = 13636827 - (-906683);
+											end;
+										else
+											if V > 6331399 - 656417 then
+												if -282538 + 6002457 > V then
+													Lr = A(1369264034 % 16496978);
+													Vr = L();
+													yr = -934656 + 32258270002605;
+													n = d(n);
+													v[Vr] = Ar;
+													lr = v[a];
+													Ir = 652064 + 24666821425598;
+													Cr = v[r];
+													Er = A(449119275 % 4446579);
+													Xr = Cr(Er, Ir);
+													Ar = lr[Xr];
+													Er, G, ar, gr = A(-64858 - (-79486)), nil, -252937 + 17955325902002, 444070 + 17684608326021;
+													Xr = P[Er];
+													Ir = v[a];
+													K = d(K);
+													vr = v[r];
+													wr = vr(Lr, ar);
+													Er = Ir[wr];
+													Cr = Xr[Er];
+													Lr = 23473818623185 - (-855521);
+													Er = v[a];
+													I = {};
+													Ir = v[r];
+													wr = A(516650 + -501883);
+													vr = Ir(wr, Lr);
+													wr = -555798 + 2090584375011;
+													Xr = Er[vr];
+													lr = Cr[Xr];
+													Pr, vr = nil, A(985714 + -971119);
+													Xr = v[a];
+													Er = v[r];
+													W, rr = nil, A(264611 + -249845);
+													Ir = Er(vr, wr);
+													Cr = Xr[Ir];
+													vr, k = A(-685204 + 699832), nil;
+													Ir = P[vr];
+													wr = v[a];
+													Lr = v[r];
+													p = d(p);
+													ar = Lr(rr, gr);
+													vr = wr[ar];
+													Er = Ir[vr];
+													ar = A(-290663 + 305650);
+													vr = v[a];
+													rr = 27825219914211 - (-780474);
+													wr = v[r];
+													Lr = wr(ar, rr);
+													Ir = vr[Lr];
+													Lr, jr, dr, rr, U = A(-818298 - (-833172)), 898400 + 16517581940907, A(-274791 - (-289589)), A(599877 - 585078), nil;
+													Xr = Er[Ir];
+													Fr = 720016 + 6679291531158;
+													D = d(D);
+													Ir = v[a];
+													ar = 10054029591647 - (-740842);
+													vr = v[r];
+													i = d(i);
+													gr = 67200644556750 % 1527287489685;
+													B = d(B);
+													wr = vr(Lr, ar);
+													Er = Ir[wr];
+													Ir = 101916686 % 10191668;
+													wr = v[a];
+													Lr = v[r];
+													ar = Lr(rr, gr);
+													vr = wr[ar];
+													z = nil;
+													ar = v[a];
+													rr = v[r];
+													gr = rr(dr, Fr);
+													Hr, wr = A(341177294 % 4610306), .15;
+													x = d(x);
+													Lr = ar[gr];
+													gr = v[a];
+													ar = 818527 - 818497;
+													dr = v[r];
+													Fr = dr(Hr, jr);
+													rr = gr[Fr];
+													M, gr = nil, 3078668510 % 14722669 > 1168845229 % 17267449;
+													V = {
+															[Ar] = lr,
+															[Cr] = Xr,
+															[Er] = Ir,
+															[vr] = wr,
+															[Lr] = ar,
+															[rr] = gr,
+														};
+													Ir = L();
+													lr = L();
+													vr = L();
+													Cr = L();
+													ar = L();
+													Ar = L();
+													mr = -871515 + 29340738617785;
+													v[Ar] = V;
+													V = -866968 + 11688944 >= 4025414699 % 25702346;
+													v[lr] = V;
+													wr = L();
+													V = nil;
+													t = d(t);
+													v[Cr] = V;
+													Er = L();
+													Lr = L();
+													Yr, V = A(5129347 % 5114635), nil;
+													f = d(f);
+													Xr = L();
+													v[Xr] = V;
+													V, R = nil, nil;
+													rr = L();
+													h = d(h);
+													gr = L();
+													v[Er] = V;
+													V = e(1645494824 % 23710924, { Vr, a, r });
+													Fr = L();
+													v[Ir] = V;
+													V = y(12847693 - (-1023592), { J, a, r });
+													q = d(q);
+													Vr = d(Vr);
+													v[vr] = V;
+													V = H(11283077 - (-546543), { N, a, r });
+													F = d(F);
+													v[wr] = V;
+													V = H(106847 + 4559739, { wr, a, r });
+													dr = L();
+													v[Lr] = V;
+													V = j(2443350707 % 12789291, { Ar, a, r });
+													s = d(s);
+													v[ar] = V;
+													V = H(10274621 - (-942603), {
+															N,
+															a,
+															r,
+															Ar,
+														});
+													c = d(c);
+													v[rr] = V;
+													V = H(252377 + 11402781, {
+															vr,
+															Ir,
+															a,
+															r,
+															N,
+															b,
+															Lr,
+															ar,
+															rr,
+															Er,
+															m,
+															Ar,
+															Cr,
+															J,
+														});
+													v[gr] = V;
+													V = j(-1029442 + 11239459, {
+															N,
+															a,
+															r,
+															J,
+															Lr,
+															Er,
+															Cr,
+															Ar,
+														});
+													v[dr] = V;
+													V = H(5220504 - (-215699), {
+															Ar,
+															a,
+															r,
+															dr,
+															Ir,
+															gr,
+														});
+													N = d(N);
+													jr = A(417494 + -402691);
+													v[Fr] = V;
+													Hr = P[jr];
+													Tr = v[a];
+													er = v[r];
+													Zr = er(Yr, yr);
+													O = nil;
+													ar = d(ar);
+													jr = Tr[Zr];
+													b = d(b);
+													V = Hr[jr];
+													jr = T(3599076 - (-937563), {
+															a,
+															r,
+															Ar,
+															Fr,
+														});
+													Hr = V(jr);
+													Yr = 564844 + 5216275704593;
+													jr = v[a];
+													Zr = A(-79480 + 94417);
+													Tr = v[r];
+													yr = A(-910803 - (-925435));
+													m = d(m);
+													Lr = d(Lr);
+													er = Tr(Zr, Yr);
+													Cr = d(Cr);
+													vr = d(vr);
+													Hr = jr[er];
+													u = nil;
+													jr = Z(441924790 % 13644075, {
+															a,
+															r,
+															Ar,
+															lr,
+															Fr,
+															Ir,
+															dr,
+															Xr,
+														});
+													V = g[Hr];
+													wr = d(wr);
+													Er = d(Er);
+													Fr = d(Fr);
+													J = d(J);
+													Hr = A(271040 - 256475);
+													rr = d(rr);
+													S = d(S);
+													Hr = V[Hr];
+													Hr = Hr(V, jr);
+													v[Xr] = Hr;
+													Xr = d(Xr);
+													dr = d(dr);
+													Ar = d(Ar);
+													g, jr = nil, A(1385329652 % 15392389);
+													V = P[jr];
+													gr = d(gr);
+													er = v[a];
+													Zr = v[r];
+													Yr = Zr(yr, mr);
+													r = d(r);
+													a = d(a);
+													Tr = er[Yr];
+													Ir = d(Ir);
+													Q = d(Q);
+													lr = d(lr);
+													jr = V(Tr);
+													V = P[A(-493758 - (-508530))];
+												else
+													V = I and 315524164 % 2215761 or 190328995 % 13740541;
+												end;
+											else
+												if V < 6340385 - 712766 then
+													f, n, b, R = V, A(996203665 % 4907334), V, A(455399 + -440454);
+													n = x[n];
+													z = v[o[248988770 % 8892456]];
+													B = -11323 + 22289130820806;
+													k = v[o[3642681657 % 14807649]];
+													M = k(R, B);
+													s = z[M];
+													n = n(x, s);
+													V, N = n and 11059030 - 504587 or -321748 + 3380205, n;
+												elseif V < 5487800 - (-176462) then
+													V, I = 3187261169 % 16367178, w;
+												else
+													I, V = {}, P[A(389003902 % 4094622)];
+													g = v[o[98448400 % 7032028]];
+													J, t, r = 869518 + 14950536894115, A(1941844414 % 13120472), nil;
+													m = v[o[167223296 % 2654338]];
+													w = nil;
+													c = v[o[-709684 + 709687]];
+													x = c(t, J);
+													F = m[x];
+													a, m = nil, 282943 + 13402839 <= 700145 + 6741851;
+													g[F] = m;
+												end;
+											end;
+										end;
+									else
+										if 6466550 - (-110840) > V then
+											if V < 576093 + 5726491 then
+												if V < 157572 + 6063948 then
+													V = A(-286743 + 301356);
+													V, m = a[V], A(1785924760 % 14287281);
+													V = V(a);
+													I = v[o[1222805521 % 15285069]];
+													g = v[o[83273 + -83271]];
+													c = -157061 + 127143650752;
+													F = g(m, c);
+													V = I[F];
+													I = 985894 + -985894;
+													r[V] = I;
+													V = 551433496 % 4208513;
+												elseif 6252867 - 29386 > V then
+													S = v[U];
+													p, G = 23708042346534 - (-600825), A(154614 + -139857);
+													K = v[a];
+													W = v[r];
+													h = 8496 + 32878327536286;
+													O = W(G, h);
+													q = K[O];
+													V = S[q];
+													S = A(176832 - 161944);
+													S = V[S];
+													S = S(V);
+													O = v[a];
+													G = v[r];
+													K = A(612074 - 597115);
+													K, D = S[K], A(-422451 - (-437174));
+													h = G(D, p);
+													W = O[h];
+													K = K(S, W);
+													q, V = K, K and 292324 + 11138993 or 1050059837 % 14890175;
+												else
+													V = t and -769400 + 8625650 or 7885790 - (-408921);
+												end;
+											else
+												if 364427 + 6082342 > V then
+													ar, Xr = 23160757541665 - 733440, A(205871 + -190912);
+													Ir = v[a];
+													vr = v[r];
+													Lr = A(-114945 - (-129647));
+													wr = vr(Lr, ar);
+													Xr = S[Xr];
+													Er = Ir[wr];
+													Xr = Xr(S, Er);
+													V, lr = 2957863481 % 14056513, Xr;
+												else
+													r, m = g(a, r);
+													V = r and -15007 + 3980371 or 9558016 - (-55671);
+												end;
+											end;
+										else
+											if 812934656 % 7329660 > V then
+												B, U = M(R, B);
+												V = B and 852082 + 12287262 or 905692 + 11729670;
+											elseif V < 7563576 - 830808 then
+												z, N = not s, N + n;
+												I = N <= f;
+												I = z and I;
+												z = f <= N;
+												z = s and z;
+												I = z or I;
+												z = 13577989 - 475491;
+												V = I and z;
+												I = 305700 + 3445793;
+												V = V or I;
+											elseif 3328474987 % 13339828 > V then
+												c = A(-604585 + 619234);
+												I = v[o[734171 + -734169]];
+												x = 11694624760682 - (-553435);
+												F = v[o[2463084803 % 13994800]];
+												m = F(c, x);
+												t, x = -318730 + 7881919196000, A(-833791 + 848402);
+												V = I[m];
+												F = v[o[424511 - 424509]];
+												m = v[o[-3078 + 3081]];
+												c = m(x, t);
+												x = 2700522427237 - 511612;
+												I = F[c];
+												c = A(860400 - 845728);
+												g[V] = I;
+												I = v[o[88032958 % 4001498]];
+												F = v[o[-584046 - (-584049)]];
+												m = F(c, x);
+												V = I[m];
+												I = r;
+												g[V] = I;
+												V = 601180 + 8043187;
+											else
+												w = 2980871051 % 23351917 < 10623807 - 364941;
+												V = v[o[-501726 - (-501730)]];
+												I = V(w);
+												V = 13287504 - (-1011691);
+											end;
+										end;
+									end;
+								else
+									if V > -1038762 + 8826897 then
+										if 147308 + 7828045 > V then
+											if V < 8138701 - 336917 then
+												f = 6784168524950 - 897087;
+												c = v[o[-503642 + 503647]];
+												t = v[o[-864282 - (-864285)]];
+												J = v[o[-422372 + 422376]];
+												N = A(417573 - 402707);
+												b = J(N, f);
+												x = t[b];
+												V = c[x];
+												c = A(414737267 % 9644714);
+												c = V[c];
+												x = y(9634758 - 525112, {
+														o[976413 - 976410],
+														o[114744 - 114740],
+														o[661305 - 661293],
+														o[1346135377 % 11808205],
+														o[426320744 % 2507769],
+														o[937549376 % 4529224],
+														o[-1441 + 1450],
+													});
+												c = c(V, x);
+												v[o[287138007 % 11043769]] = c;
+												V = v[o[930618340 % 5674502]];
+												N = A(1073726903 % 15561048);
+												t = v[o[-742054 + 742057]];
+												J = v[o[468255 - 468251]];
+												f = 57215 + 2950198420958;
+												b = J(N, f);
+												x = t[b];
+												t = 9321941 - (-446629) ~= 1629263536 % 7914652;
+												V[x] = t;
+												V = 5701409 - 628772 >= 140189 - (-320986);
+												I = { V };
+												V = P[A(742447 - 727588)];
+											elseif V < 1468064944 % 7979499 then
+												F, m, I, r, g, V, w, a = nil, nil, {}, nil, nil, P[A(34990 - 20136)], nil, nil;
+											elseif V < -521336 + 8360294 then
+												V = c and -601848 + 3267999 or 11076299 - (-984857);
+											else
+												N = A(-566878 - (-581808));
+												t = v[o[460889 - 460887]];
+												J = v[o[-901664 - (-901667)]];
+												s, f = A(3159905385 % 13561763), 6753456068853 - (-717651);
+												b = J(N, f);
+												V = t[b];
+												J = v[o[-433127 + 433128]];
+												z = 27377048081519 - 991907;
+												N = v[o[16475293 % 16475291]];
+												f = v[o[-410782 - (-410785)]];
+												n = f(s, z);
+												b = N[n];
+												t = J[b];
+												x[V] = t;
+												V = -732178 + 9026889;
+											end;
+										else
+											if V < 8289294 - 140624 then
+												V = A(1028087749 % 5679961);
+												V = a[V];
+												V = V(a, c);
+												m, x = g, V;
+												t, V = x, x and 1169832665 % 5792221 or 3502864950 % 18799140;
+											elseif 4891247812 % 22296818 > V then
+												G = v[U];
+												O = V;
+												p = v[a];
+												Ar, h = 2491463412985 - (-661391), A(216008813 % 8639758);
+												h, Pr = G[h], A(611833 - 596900);
+												i = v[r];
+												u = i(Pr, Ar);
+												D = p[u];
+												h = h(G, D);
+												V, W = h and 2221263213 % 11754448 or -563592 - (-879898), h;
+											elseif V < 9320942 - 1030358 then
+												O = 1589292537474 - 21406;
+												S = v[o[402339 + -402338]];
+												Q = A(836966 + -822103);
+												q = v[o[324741 + -324739]];
+												Q, W, V = F[Q], A(748019329 % 5420324), 411511899 % 18884715;
+												K = q(W, O);
+												U = S[K];
+												Q = Q(F, U);
+												R = Q;
+											else
+												x, V, m, c = nil, 3193247 - (-186284), nil, nil;
+											end;
+										end;
+									else
+										if V > 8132807 - 643555 then
+											if 679445 + 6943988 > V then
+												m, F, V = nil, nil, 2114860780 % 21083475;
+											elseif 893561 + 6815123 > V then
+												I = v[o[-932387 + 932389]];
+												m, F = 10755676646907 - 891499, A(185482560 % 8831794);
+												r = v[o[2112089009 % 14175094]];
+												g = r(F, m);
+												V = I[g];
+												I, r = 396476 + 7189167 >= 343003 + 13404142, A(216689 + -201886);
+												w[V] = I;
+												I = P[r];
+												x = -504541 + 28456657348256;
+												g = v[o[-212671 + 212673]];
+												c, a = A(1725612565 % 10586489), nil;
+												F = v[o[-893696 + 893699]];
+												m = F(c, x);
+												F = A(21583 + -6833);
+												r = g[m];
+												V = I[r];
+												I = V();
+												I = v[o[891348 - 891346]];
+												m = 196909 + 10791122489972;
+												r = v[o[-1021884 - (-1021887)]];
+												g = r(F, m);
+												V = I[g];
+												I = 2712334905 % 23684979 >= 638574 + -301014;
+												w[V] = I;
+												w, I, V = nil, {}, P[A(-663165 + 678015)];
+											elseif V < 805035 + 6960903 then
+												W, O = V, A(389218123 % 4633371);
+												h = v[a];
+												O, u, i = S[O], 5769321979209 - 332491, A(134297364 % 1839487);
+												D = v[r];
+												p = D(i, u);
+												G = h[p];
+												O = O(S, G);
+												V, K = O and 1370560265 % 19644303 or -161990 + 14985622, O;
+											else
+												I, V = { a }, P[A(-101395 - (-116069))];
+											end;
+										else
+											if 806299 + 6549792 > V then
+												if V < 1810785120 % 18594707 then
+													I, V = {}, P[A(888290 - 873453)];
+												elseif V < -145839 + 7377596 then
+													s, n, J, F = 715853 + 1211028510182, A(968729974 % 7229218), A(-718965 + 733817), r;
+													t = P[J];
+													J = t(m);
+													b = v[o[-807662 - (-807664)]];
+													N = v[o[-329741 - (-329744)]];
+													f = N(n, s);
+													t = b[f];
+													x = J == t;
+													V, c = x and -69905 + 4380588 or 2196946146 % 17102535, x;
+												else
+													V = v[o[931618 - 931617]];
+													c, m = 25642505668989 - (-156967), 34479757613610 - (-877709);
+													a = v[o[470147790 % 10685177]];
+													F = A(2668103126 % 10715214);
+													r = v[o[66065925 % 564666]];
+													g = r(F, m);
+													m = A(601952 + -586984);
+													w = a[g];
+													r = v[o[-655720 - (-655722)]];
+													I = A(-384572 + 399528);
+													g = v[o[919984 - 919981]];
+													F = g(m, c);
+													g, I = A(908684 - 893955), V[I];
+													a = r[F];
+													F = 30960575213564 - 898987;
+													I = I(V, w, a);
+													m = 7649265958286 - 864165;
+													V = v[o[589862 - 589858]];
+													w = v[o[553438 - 553436]];
+													a = v[o[453692 + -453689]];
+													r = a(g, F);
+													I = w[r];
+													F = A(-981920 + 996888);
+													a = v[o[-917681 + 917683]];
+													r = v[o[2772278303 % 12601265]];
+													g = r(F, m);
+													w = a[g];
+													V[I] = w;
+													V, I = P[A(629738 + -615062)], {};
+												end;
+											else
+												if V < 1084205550 % 22911205 then
+													k = v[o[-559259 - (-559260)]];
+													B = A(638992 - 624139);
+													M = v[o[864757 - 864755]];
+													Q, n = 28892249978317 - 852287, V;
+													R = M(B, Q);
+													s = A(179747559 % 1728199);
+													s = F[s];
+													z = k[R];
+													s = s(F, z);
+													V, f = s and -817813 - (-873199) or 993011 + 4563016, s;
+												else
+													c = A(1311499441 % 15801019);
+													g = v[o[-381768 + 381770]];
+													x, V = -71724 + 27908607986415, A(-966140 - (-980948));
+													F = v[o[-147141 + 147144]];
+													m = F(c, x);
+													V = a[V];
+													I = g[m];
+													V = V(a, I);
+													g = V;
+													V = g and 1158990114 % 11408190 or 515221 + 8129146;
+												end;
+											end;
+										end;
+									end;
+								end;
+							end;
+						else
+							if V > 1013747 - (-722871) then
+								if V < 264874319 % 11903792 then
+									if 157142 + 2215894 > V then
+										if 311929 + 1915445 > V then
+											if 1290345343 % 18404982 > V then
+												if V < -115237 + 1892114 then
+													t = A(807723 - 792908);
+													m = v[o[-444897 + 444899]];
+													c = v[o[-1032553 + 1032556]];
+													J = 3041508359872 - (-296648);
+													x = c(t, J);
+													F = m[x];
+													J = 26246216462227 - (-393258);
+													g = a[F];
+													t = A(480243 - 465362);
+													m = v[o[-952148 + 952150]];
+													c = v[o[708423 - 708420]];
+													x = c(t, J);
+													F = m[x];
+													r = g[F];
+													g = -977376 - (-976876);
+													I = r < g;
+													V = I and 2879783 - (-587884) or 8273334 - (-25503);
+												elseif 140425 + 1708045 > V then
+													Er = v[a];
+													wr = A(78429289 % 8712713);
+													Ir = v[r];
+													Lr = -597150 + 35093704301683;
+													vr = Ir(wr, Lr);
+													Xr = Er[vr];
+													Cr = Pr[Xr];
+													Vr, V = Cr, 1091738277 % 17835971;
+												else
+													I, V = {}, P[A(939782854 % 4453877)];
+												end;
+											else
+												if 2277266503 % 11044312 > V then
+													c = A(-681650 - (-696456));
+													I = v[o[115543 - 115541]];
+													f, N = 206434 + 6533776893312, 29203491792595 - (-167499);
+													F = v[o[-295799 + 295802]];
+													x, b = 8376328270934 - 730394, A(-305482 - (-320234));
+													m = F(c, x);
+													V = I[m];
+													c = A(312871858 % 8233085);
+													m = P[c];
+													x = v[o[53755 + -53753]];
+													t = v[o[14330317 % 7165157]];
+													J = t(b, N);
+													c = x[J];
+													F = m[c];
+													J = A(396247 + -381510);
+													c = v[o[-823537 + 823539]];
+													x = v[o[617075 + -617072]];
+													b = -137818 + 19693189627436;
+													t = x(J, b);
+													m = c[t];
+													I = F[m];
+													x = -563362 + 10697091017751;
+													g[V] = I;
+													I = v[o[869589380 % 8873361]];
+													F = v[o[58989283 % 4213520]];
+													c, J = A(874740 - 859828), A(423756006 % 5575542);
+													m = F(c, x);
+													N = A(89955 - 75066);
+													V = I[m];
+													I = 796303798 % 5918690 <= 120879 + 5636112;
+													g[V] = I;
+													I = A(454361 + -439490);
+													V = P[I];
+													c = v[o[265433 + -265431]];
+													x = v[o[916587000 % 6500617]];
+													b = 2774470877006 - 1038915;
+													t = x(J, b);
+													I = A(933137529 % 6912019);
+													m = c[t];
+													F = r[m];
+													t = v[o[87968 + -87966]];
+													J = v[o[223822731 % 9325947]];
+													b = J(N, f);
+													x = t[b];
+													I = V[I];
+													c = r[x];
+													x = 2256844004 % 14654831;
+													m = c * x;
+													I = I(V, F, m, g);
+													F, V = I, 7612198608 % 31523830 <= 1484772528 % 23016469;
+													m = V;
+													V = F and 14105285 - 24850 or 14043122 - 859503;
+												else
+													V = v[o[446574 + -446569]];
+													m = v[o[277735263 % 4208110]];
+													t = A(2973989359 % 16522081);
+													c = v[o[3063938278 % 13557249]];
+													J, I = 10991911959562 - (-137204), A(140500 - 125692);
+													I = V[I];
+													x = c(t, J);
+													F = m[x];
+													I = I(V, F);
+													F = I;
+													V = F and 351209 + 9208078 or 208619176 % 24996510;
+												end;
+											end;
+										else
+											if V < 1922716 - (-388731) then
+												F = v[o[-989922 - (-989923)]];
+												x, t = A(175987731 % 730178), 16668717590979 - 396146;
+												m = v[o[179464 + -179462]];
+												J = A(15142292 % 1680855);
+												c = m(x, t);
+												g = F[c];
+												r = w[g];
+												F = v[o[-746314 - (-746317)]];
+												c = v[o[395498 + -395497]];
+												x = v[o[488874 + -488872]];
+												b = 319595 + 28149640745673;
+												t = x(J, b);
+												m = c[t];
+												g = F[m];
+												I = r == g;
+												V = I and -19834 + 16098710 or 1583887340 % 15060055;
+											elseif 3268589 - 898153 > V then
+												g = A(857623706 % 4045326);
+												I = v[o[-228662 - (-228669)]];
+												V, g = 6017003 - 347473, I[g];
+												g = g(I);
+												I = nil;
+												v[o[3743124679 % 16710378]] = I;
+											elseif V < 3402433 - 1030736 then
+												m, a = not F, g + a;
+												I = r >= a;
+												I = m and I;
+												m = a >= r;
+												m = F and m;
+												I = m or I;
+												m = 2506546890 % 13929930;
+												V = I and m;
+												I = 5297668958 % 22502205;
+												V = V or I;
+											else
+												b = v[o[-973082 - (-973087)]];
+												V = 336247817 % 17394127;
+												J = t ~= b;
+												I = J;
+											end;
+										end;
+									else
+										if V < 2047634 - (-635187) then
+											if V > 110164771 % 7688381 then
+												if -542573 + 3166431 > V then
+													w, a, I, V = nil, nil, {}, P[A(-849120 + 864102)];
+												else
+													J, b = A(-180420 + 195268), 11649717447861 - 890757;
+													c = v[o[1164282754 % 5763776]];
+													x = v[o[3011336859 % 15208772]];
+													t = x(J, b);
+													V = c[t];
+													c = e(869111 + 1048845, {});
+													m[V] = c;
+													V = 3738694792 % 25010964;
+												end;
+											else
+												if V < 2724772559 % 16301505 then
+													V = A(779375887 % 5688767);
+													V = w[V];
+													a = v[o[219468242 % 1219268]];
+													m, F = -27336 + 18044530838426, A(591423 + -576482);
+													r = v[o[1934735091 % 12402148]];
+													g = r(F, m);
+													I = a[g];
+													V = V(w, I);
+													a = V;
+													V = not a;
+													V = V and -931970 + 13645857 or 2311762797 % 12534664;
+												elseif V < 2225192 - (-245592) then
+													I, w, a, V = {}, nil, nil, P[A(-203680 - (-218337))];
+												else
+													V, t = 736719 + 15165355, -258845 + 20184341551060;
+													r = v[o[-467501 + 467502]];
+													F = v[o[664409406 % 8742229]];
+													x = A(917781 + -903048);
+													m = v[o[1038265 + -1038262]];
+													c = m(x, t);
+													g = F[c];
+													a = r[g];
+													w = not a;
+													I = w;
+												end;
+											end;
+										else
+											if 2287531 - (-511695) > V then
+												I = v[o[2062772072 % 14324806]];
+												r, V = A(-747868 - (-762462)), 1979825 - 878829;
+												r = I[r];
+												r = r(I);
+											elseif V < 2092862679 % 8781306 then
+												V = F;
+												V = not I;
+												V = V and 1027 + 9937423 or 1328564 - (-872648);
+											elseif V < 3258063 - 325466 then
+												f, c = 360486 + 22770389707077, A(187827103 % 15651020);
+												c, N, g = F[c], A(430256 - 415347), a;
+												t = v[o[372801 - 372800]];
+												J = v[o[1721012293 % 8736103]];
+												b = J(N, f);
+												x = t[b];
+												c = c(F, x);
+												m, V = c, c and 171074 + 818585 or 331094 + 14447087;
+											else
+												V, I = P[A(856334 - 841450)], {};
+											end;
+										end;
+									end;
+								else
+									if 629537872 % 7366174 > V then
+										if V < 357217284 % 3888401 then
+											if V > -630476 + 3991368 then
+												if 611694032 % 6912832 > V then
+													g, c = F(r, g);
+													V = g and -769621 + 11092549 or -450864 + 10324521;
+												else
+													m, V = x, t;
+													V = x and -640610 + 16149859 or 15369098 - (-766978);
+												end;
+											else
+												if 348770059 % 6065266 > V then
+													V = nil;
+													I = { V };
+													V = P[A(1436282627 % 7639723)];
+												elseif V < 4129656 - 921325 then
+													R = A(-781384 + 796230);
+													z = v[o[577565 + -577563]];
+													B = 35107015057396 - (-597991);
+													k = v[o[-816750 - (-816753)]];
+													M = k(R, B);
+													n = A(417625 - 402762);
+													n = x[n];
+													s = z[M];
+													n = n(x, s);
+													V, N = 2360012103 % 21358706, n;
+												else
+													r, m = g(a, r);
+													V = r and 1389410010 % 8480382 or 551807 + 136821;
+												end;
+											end;
+										else
+											if V < 2853890 - (-532133) then
+												g, c = F(r, g);
+												V = g and 8540653 - 446196 or 3352775 - 884517;
+											elseif V < 720973 + 2674546 then
+												I = v[o[921701 + -921693]];
+												V = I and 2555665907 % 14842828 or 2010192 - 909196;
+											elseif V < -875099 + 4275352 then
+												c = 11845772007404 - (-425376);
+												r = v[o[764708 - 764707]];
+												m, V = A(-894213 + 908802), A(783770 + -768962);
+												V = a[V];
+												g = v[o[1700200692 % 8809330]];
+												F = g(m, c);
+												I = r[F];
+												V = V(a, I);
+												r = V;
+												V = r and 696812 + 611393 or 4181834544 % 18125599;
+											else
+												c, x, V, m = nil, nil, 1959833790 % 17949268, nil;
+											end;
+										end;
+									else
+										if 4257791943 % 16882106 > V then
+											if 52155 + 3393769 > V then
+												w, V, I = nil, P[A(1111136997 % 8291958)], {};
+											elseif -923105 + 4399569 > V then
+												F, J, r = A(-934309 - (-949180)), A(-784614 - (-799212)), V;
+												g = P[F];
+												F, b = A(901064 + -886256), 24064913096992 - (-207526);
+												c = v[o[-396424 + 396426]];
+												x = v[o[393671 - 393668]];
+												F = g[F];
+												t = x(J, b);
+												m = c[t];
+												F = F(g, m);
+												V, I = F and 14829854 - (-716689) or -224295 + 10807901, F;
+											elseif V < 2211151526 % 11680736 then
+												c = 672793 + 19869573390347;
+												w = v[o[311652 + -311651]];
+												r = v[o[1470514763 % 8307993]];
+												g = v[o[-774938 - (-774941)]];
+												m = A(168480 + -153552);
+												F = g(m, c);
+												a = r[F];
+												I = w[a];
+												w = 325974516 % 2469503;
+												V = I ~= w;
+												V = V and 1987284389 % 14027855 or 112374894 % 21057111;
+											else
+												w = v[o[115424205 % 2355596]];
+												c = 3255911952377 - (-480755);
+												r = v[o[361258508 % 5734262]];
+												m = A(-669098 + 684004);
+												g = v[o[-27832 + 27835]];
+												F = g(m, c);
+												a = r[F];
+												I = w[a];
+												V = not I;
+												V = V and -639533 + 4836577 or -755062 + 9810344;
+											end;
+										else
+											if 711977 + 2810700 > V then
+												t, I, x, J = m, m, V, V;
+												V = m and 262863704 % 6397400 or 814582 - (-350816);
+												v[o[168919519 % 14076626]] = I;
+											elseif 3745276 - 102015 > V then
+												F = v[o[-23061 - (-23066)]];
+												m = 281193912 % 7399839;
+												g = F >= m;
+												V = g and 10209591 - 932437 or 3206077 - (-1024998);
+											elseif V < 523717625 % 16249058 then
+												Ar, V = Vr, lr;
+												V = Vr and 2965638955 % 16444214 or -388120 + 12112706;
+											else
+												V = 6206764764 % 27174754;
+											end;
+										end;
+									end;
+								end;
+							else
+								if 368475 + 508076 > V then
+									if 139383 + 382054 > V then
+										if V > 740515 - 470379 then
+											if V < 991534 - 696864 then
+												I, F, m, V = A(312055 - 297429), A(951871 + -937000), A(-745154 - (-759730)), {};
+												w = V;
+												V = P[I];
+												g = P[F];
+												m = g[m];
+												F = { m(g) };
+												g = { V(l(F)) };
+												I, V, r, a = g[3832112866 % 15641277], 776165 + 5737115, g[-428106 + 428109], g[823164 + -823162];
+												g = I;
+											elseif V < 125860611 % 8966434 then
+												Ar = -132994 + 9912902834570;
+												G = v[U];
+												p = v[a];
+												V = 12475205 - 1048216;
+												i = v[r];
+												h, Pr = A(-184288 + 199151), A(123342 - 108724);
+												u = i(Pr, Ar);
+												h = G[h];
+												D = p[u];
+												h = h(G, D);
+												W = h;
+											elseif 3678602483 % 15199148 > V then
+												m, V = c, x;
+												V = 1689283318 % 6835197;
+											else
+												a = v[o[-837337 + 837338]];
+												x = 3546 + 13443400272538;
+												g = v[o[-437122 - (-437124)]];
+												F = v[o[450838875 % 6830892]];
+												c, V = A(-620623 + 635191), 642060413 % 10104367;
+												m = F(c, x);
+												r = g[m];
+												w = a[r];
+												a = A(-456044 - (-470762));
+												a = w[a];
+												a = a(w);
+												I = a;
+											end;
+										else
+											if V < -117290 + 275298 then
+												if V < -716422 - (-769490) then
+													V = v[o[2887399873 % 13367592]];
+													I = A(737079 + -722498);
+													I = V[I];
+													I = I(V);
+													V = 184987953 % 10113750;
+												elseif 893620204 % 8846865 > V then
+													b, V = f, n;
+													V = -344885 + 1294027;
+												else
+													r, V, a = nil, 8621601 - 309784, nil;
+												end;
+											else
+												if 61150 - (-171331) > V then
+													Lr, Cr = A(236994 - 222315), V;
+													Ir = v[a];
+													vr = v[r];
+													ar = 29259356884709 - 88493;
+													wr = vr(Lr, ar);
+													Er = Ir[wr];
+													Xr = A(2088718615 % 8926084);
+													Xr = S[Xr];
+													Xr = Xr(S, Er);
+													lr, V = Xr, Xr and 1967775249 % 10959662 or 1042290 + 5337968;
+												else
+													V = 548712599 % 7784006 < -96863 + 2945668;
+													v[o[408794121 % 2151548]] = V;
+													I, V = {}, P[A(-371237 - (-385880))];
+												end;
+											end;
+										end;
+									else
+										if V < 1151458 - 421449 then
+											if 656682525 % 11508535 > V then
+												if 108868107 % 9023741 > V then
+													M, f = 16195769055336 - 858867, A(735812 + -721031);
+													N = P[f];
+													n = v[o[-261888 + 261890]];
+													s = v[o[207205443 % 5312960]];
+													k = A(-484639 + 499222);
+													z = s(k, M);
+													f = n[z];
+													V, s, n = 592883 - (-572515), 484782 + -484782, 246448 + -246448;
+													b = N[f];
+													f = 1479720043 % 7148406;
+													N = b(f, n, s);
+													t = N;
+												elseif 2146742999 % 12928317 > V then
+													I = 988607 - 988606;
+													w = L();
+													t, x = 16520666072347 - (-1005810), A(226737 - 212057);
+													v[w] = C[738987517 % 5354982];
+													r = v[o[2441844121 % 10804620]];
+													F = v[o[1864986034 % 16651661]];
+													m = v[o[740231 + -740228]];
+													c = m(x, t);
+													V = -882046 + 3253559;
+													g = F[c];
+													a = r[g];
+													r = a;
+													a = 153810481 % 3204385;
+													g = a;
+													a = 30868 - 30868;
+													F = g < a;
+													a = I - g;
+												else
+													I, w, V = {}, nil, P[A(85650679 % 2195789)];
+												end;
+											else
+												if V < 392375155 % 2151989 then
+													V, I = P[A(825317374 % 10446868)], {};
+												else
+													V, I = P[A(633945099 % 3371970)], {};
+												end;
+											end;
+										else
+											if V < 349128 - (-407030) then
+												h = v[a];
+												u, i = -712613 + 33684478811370, A(430488 + -415531);
+												D = v[r];
+												p = D(i, u);
+												G = h[p];
+												h = T(11465617 - 802496, { a, r, N });
+												V = O[G];
+												G = A(-618783 - (-633348));
+												G = V[G];
+												G = G(V, h);
+												V = 2728387376 % 17516131;
+											elseif V < -922460 + 1724052 then
+												K = H(110983 + 15674024, { U, a, r });
+												q = A(137656 + -123011);
+												V = P[q];
+												q = V(K);
+												V = 270049 + 8940439;
+											elseif 1889155 - 1039538 > V then
+												a[I] = g;
+												V, c = F, A(160184 + -145465);
+												g = v[o[987033 - 987031]];
+												F = v[o[-560217 + 560220]];
+												x = 31649448622065 - 540256;
+												m = F(c, x);
+												b = 20767859967792 - (-761494);
+												I = g[m];
+												m, J = A(324077 + -309192), A(-938163 + 952910);
+												F = P[m];
+												c = v[o[-792974 + 792976]];
+												V = 50602651 % 21151907;
+												x = v[o[722156113 % 5555047]];
+												r = nil;
+												t = x(J, b);
+												m = c[t];
+												g = F[m];
+												a[I] = g;
+											else
+												x = A(918477 - 903712);
+												c = P[x];
+												N = A(197813 + -183203);
+												t = v[o[-176389 - (-176390)]];
+												f = 14885669908944 - (-895299);
+												J = v[o[-198927 - (-198929)]];
+												b = J(N, f);
+												x = t[b];
+												V = c[x];
+												c = V(w, m);
+												V = -703641 + 8280727;
+											end;
+										end;
+									end;
+								else
+									if V < 3501567017 % 14832335 then
+										if V > 296907 - (-704651) then
+											if V < 223733 - (-794647) then
+												V = F;
+												I = V(r, g);
+												V = -654853 + 10892993;
+											elseif V < 127839211 % 9751785 then
+												a = I;
+												V = a and 208649926 % 2500523 or 2820485319 % 19280767;
+											elseif -453273 + 1557029 > V then
+												V = 2632405 - 50840;
+											else
+												x, t = A(-941533 + 956389), 8986525851239 - 429583;
+												F = v[o[181506822 % 4125155]];
+												m = v[o[450130 + -450127]];
+												c = m(x, t);
+												g = F[c];
+												r = a[g];
+												x = A(4098094447 % 16134172);
+												F = v[o[-496904 - (-496906)]];
+												m = v[o[2005243606 % 9594467]];
+												t = -772395 + 17765345634683;
+												c = m(x, t);
+												g = F[c];
+												I = r[g];
+												r = 74037 + -74137;
+												V = I > r;
+												V = V and 2174904687 % 12257877 or 1207520 - (-567250);
+											end;
+										else
+											if V > 1539349075 % 10609515 then
+												if V < 376886 + 616629 then
+													V = m and 12864818 - (-282786) or 5658692 - 136789;
+												else
+													g, I = A(417719 - 402848), A(299289 + -284663);
+													V = P[I];
+													F = A(-773366 + 787942);
+													r = P[g];
+													F = r[F];
+													g = { F(r) };
+													r = { V(l(g)) };
+													V, w, I, a = 317161032 % 16149917, r[-487072 + 487074], r[376531 - 376530], r[1635037281 % 7534734];
+													r = I;
+												end;
+											else
+												if V < 1211566543 % 17051867 then
+													R = 8142379082355 - (-207964);
+													s = v[o[-366014 - (-366016)]];
+													V = 12267030 - (-28722);
+													z = v[o[104815 - 104812]];
+													Q, M = 11197002886417 - (-206669), A(-498020 + 512936);
+													k = z(M, R);
+													n = s[k];
+													B = A(2237981508 % 11717104);
+													f = x[n];
+													s = v[o[2000366917 % 8476131]];
+													k = v[o[789343 + -789341]];
+													M = v[o[1001536 - 1001533]];
+													R = M(B, Q);
+													z = k[R];
+													n = s[z];
+													N = f < n;
+													J = N;
+												elseif 127402636 % 6657106 > V then
+													V = 399779 + 3821597 < -197529 + 15469800;
+													m = V;
+													V = 12564622 - 862660;
+												else
+													t, V = b, N;
+													V = 717795 + 14678287;
+												end;
+											end;
+										end;
+									else
+										if 847552 + 456778 > V then
+											if V < 1880386 - 685974 then
+												c, V = t, J;
+												V = t and 3579813 - (-872084) or 13374246 - 513858;
+											elseif -63340 + 1310358 > V then
+												V = v[o[2108171292 % 13013403]];
+												I = A(550286 - 535701);
+												I = V[I];
+												I = I(V, c);
+												t = I;
+												V, I = t and 467086 + 1904796 or 6270807 - 511403, t;
+											elseif V < 137238993 % 5911020 then
+												c = A(172396 - 157732);
+												g = v[o[1753655468 % 9851997]];
+												x, a = 291572 + 22107295135042, A(287017923 % 2958795);
+												F = v[o[-5336 + 5339]];
+												V = 1852473 - 821457;
+												m = F(c, x);
+												r = g[m];
+												a = w[a];
+												a = a(w, r);
+												I = a;
+											else
+												M, f, N, R = A(-316800 - (-331591)), A(-59842 + 74705), V, 24120012469766 - (-587225);
+												s = v[o[-739646 + 739647]];
+												z = v[o[3089457234 % 13316626]];
+												f = F[f];
+												k = z(M, R);
+												n = s[k];
+												f = f(F, n);
+												b, V = f, f and 1829821074 % 13648298 or -814331 + 8170743;
+											end;
+										else
+											if V < -577114 + 2028103 then
+												g = A(-72844 + 87647);
+												I = P[g];
+												x = A(317827 - 303164);
+												F = v[o[-362613 + 362614]];
+												t = 422213 + 5112305784839;
+												m = v[o[-656266 - (-656268)]];
+												c = m(x, t);
+												g = F[c];
+												V = I[g];
+												g = v[o[-342266 + 342272]];
+												I = V(g, r);
+												V = 3869628748 % 16841406;
+											elseif V < -1024036 + 2632542 then
+												V = v[o[1021004 - 1021000]];
+												I = V();
+												V = w and 2554191866 % 14729227 or 4121935918 % 27566392;
+											elseif 1180010498 % 6301335 > V then
+												I = v[o[145193 - 145190]];
+												m = A(186093997 % 1442475);
+												r = v[o[45108 + -45107]];
+												c = 888282 + 29871382849659;
+												g = v[o[-876451 - (-876453)]];
+												F = g(m, c);
+												a = r[F];
+												V = I[a];
+												a = V;
+												V, I = a and -681172 + 15867788 or 4463503766 % 19102878, a;
+											else
+												V, f = z, s;
+												V = 9110940 % 4527777;
+											end;
+										end;
+									end;
+								end;
+							end;
+						end;
+					end;
+				end;
+				V = #X;
+				return l(I);
+			end, {}, function(P, A)
+				local l = r(A);
+				local C = function(C, o, X)
+						return V(P, { C, o, X }, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function(...)
+						return V(P, { ... }, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function()
+						return V(P, {}, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function(C)
+						return V(P, { C }, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function(C, o, X, E, I, v, w)
+						return V(P, {
+							C,
+							o,
+							X,
+							E,
+							I,
+							v,
+							w,
+						}, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function(C, o, X, E, I)
+						return V(P, {
+							C,
+							o,
+							X,
+							E,
+							I,
+						}, A, l);
+					end;
+				return C;
+			end, function(P, A)
+				local l = r(A);
+				local C = function(C, o, X, E)
+						return V(P, {
+							C,
+							o,
+							X,
+							E,
+						}, A, l);
+					end;
+				return C;
+			end;
+		return (F(12866668 - (-657397), {}))(l(I));
+	end)(setmetatable, getmetatable, getfenv and getfenv() or _ENV, select, newproxy, { ... }, unpack or table[A(449792 + -435014)]);
+end)(...);
